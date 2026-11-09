@@ -22,24 +22,32 @@
         <!-- Content: vertical Settings list -->
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="2" Margin="0,0,0,18" VerticalAlignment="Top">
+            <Grid RowSpacing="2" Margin="0,0,0,18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <!-- Breadcrumb + heading -->
-                <TextBlock Padding="22,4,22,0"
-                           FontSize="13"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}">Sexy &#x203A; Proxy</TextBlock>
-                <TextBlock Padding="20,2,20,8"
+                <TextBlock Grid.Row="0" Padding="20,8,20,6"
                            FontSize="27"
                            FontWeight="SemiBold">Sexy Proxy</TextBlock>
 
                 <!-- PROXY section -->
-                <TextBlock Padding="22,2,22,4"
+                <TextBlock Grid.Row="1" Padding="22,2,22,4"
                            FontSize="12"
                            CharacterSpacing="80"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">PROXY</TextBlock>
 
                 <!-- Proxy switch row -->
-                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                <Border Grid.Row="2" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
@@ -84,7 +92,7 @@
                 </Border>
 
                 <!-- Refresh status row -->
-                <Button x:Name="RefreshButton"
+                <Button Grid.Row="3" x:Name="RefreshButton"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
@@ -124,13 +132,13 @@
                 </Button>
 
                 <!-- SCHEDULE section -->
-                <TextBlock Padding="22,2,22,4"
+                <TextBlock Grid.Row="4" Padding="22,2,22,4"
                            FontSize="12"
                            CharacterSpacing="80"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">SCHEDULE</TextBlock>
 
                 <!-- Schedule switch row -->
-                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                <Border Grid.Row="5" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
@@ -175,7 +183,7 @@
                 </Border>
 
                 <!-- Change schedule row -->
-                <Button x:Name="EditButton"
+                <Button Grid.Row="6" x:Name="EditButton"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
@@ -215,13 +223,13 @@
                 </Button>
 
                 <!-- APP section -->
-                <TextBlock Padding="22,2,22,4"
+                <TextBlock Grid.Row="7" Padding="22,2,22,4"
                            FontSize="12"
                            CharacterSpacing="80"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">APP</TextBlock>
 
                 <!-- Start with Windows row -->
-                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                <Border Grid.Row="8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
@@ -264,7 +272,7 @@
                 </Border>
 
                 <!-- Open log row -->
-                <Button x:Name="LogButton"
+                <Button Grid.Row="9" x:Name="LogButton"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Left"
                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
@@ -303,13 +311,13 @@
                 </Button>
 
                 <!-- Blocked / error line (theme default text) -->
-                <TextBlock x:Name="HintText"
+                <TextBlock Grid.Row="10" x:Name="HintText"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            Visibility="Collapsed"
                            TextWrapping="WrapWholeWords"
                            FontSize="12"
                            Padding="22,4,22,0" />
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Window>
