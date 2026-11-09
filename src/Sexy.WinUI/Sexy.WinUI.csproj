@@ -13,9 +13,6 @@
     <!-- Required for unpackaged self-contained builds: without it, the published
          exe crashes at startup with 0xC000027B in Microsoft.UI.Xaml.dll. -->
     <EnableMsixTooling>true</EnableMsixTooling>
-    <!-- Declares Windows 10/11 support and PerMonitorV2 DPI awareness.
-         Without this the window is bitmap-scaled and looks blurry. -->
-    <ApplicationManifest>app.manifest</ApplicationManifest>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Platforms>x64</Platforms>
 

@@ -234,10 +234,13 @@ Behavior notes:
 - The window is resizable and maximizable; content scrolls.
 - The tray icon is repainted on every status refresh: green = ON,
   red = `OTHER*` proxy, grey = OFF or status unknown. Tooltip matches.
-- `app.manifest` declares `PerMonitorV2` DPI awareness and `supportedOS`
-  (Windows 10 GUID) — without it the window is bitmap-scaled and blurry.
-  Keep it alongside `EnableMsixTooling=true` (which fixes the published-exe
-  startup crash 0xC000027B in Microsoft.UI.Xaml.dll).
+- DPI awareness is set at runtime in `App` (P/Invoke
+  `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`) before any window is
+  created. Do NOT add an `app.manifest`/`ApplicationManifest`: the MSIX
+  tooling owns the embedded manifest and mangles merged ones, producing the
+  "side-by-side configuration is incorrect" startup error.
+  `EnableMsixTooling=true` stays (it fixes the published-exe startup crash
+  0xC000027B in Microsoft.UI.Xaml.dll).
 - **Refresh model is the same as the old window:** on `Shown`/`Activated`
   (max once per 5 s), after any action, and on Refresh Status. No timers,
   no background polling.
