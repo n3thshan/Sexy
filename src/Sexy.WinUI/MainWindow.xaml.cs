@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
 
     private readonly EngineService _engine = new();
     private readonly Brush _white = new SolidColorBrush(ColorHelper.FromArgb(255, 255, 255, 255));
+    private TaskbarIcon? _tray;
 
     private bool _busy;
     private bool _refreshing;
@@ -44,8 +45,8 @@ public sealed partial class MainWindow : Window
 
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
-            presenter.IsResizable = false;
-            presenter.IsMaximizable = false;
+            presenter.IsResizable = true;
+            presenter.IsMaximizable = true;
             presenter.IsMinimizable = true;
         }
 
@@ -104,12 +105,12 @@ public sealed partial class MainWindow : Window
             Command = new RelayCommand(ExitApp)
         });
 
-        var tray = new TaskbarIcon
+        _tray = new TaskbarIcon
         {
             ToolTipText = "Sexy - v2rayN schedule",
             NoLeftClickDelay = true
         };
-        tray.IconSource = new GeneratedIconSource
+        _tray.IconSource = new GeneratedIconSource
         {
             Text = "S",
             FontFamily = new FontFamily("Segoe UI"),
@@ -118,10 +119,51 @@ public sealed partial class MainWindow : Window
             Foreground = _white,
             Background = new SolidColorBrush(TrayBlue)
         };
-        tray.ContextFlyout = menu;
-        tray.LeftClickCommand = new RelayCommand(ToggleWindowFromTray);
+        _tray.ContextFlyout = menu;
+        _tray.LeftClickCommand = new RelayCommand(ToggleWindowFromTray);
 
-        RootGrid.Children.Add(tray);
+        RootGrid.Children.Add(_tray);
+    }
+
+    // Repaints the tray icon so it matches the proxy state: green = ON,
+    // red = another proxy is set, grey = OFF or unknown.
+    private void UpdateTrayIcon(string stateUpper)
+    {
+        if (_tray is null) return;
+
+        Color background;
+        string tooltip;
+        if (stateUpper.StartsWith("ON", StringComparison.Ordinal))
+        {
+            background = Green;
+            tooltip = "Sexy - Proxy ON";
+        }
+        else if (stateUpper.StartsWith("OTHER", StringComparison.Ordinal))
+        {
+            background = Red;
+            tooltip = "Sexy - Another proxy is configured";
+        }
+        else if (stateUpper == "ERROR")
+        {
+            background = Grey;
+            tooltip = "Sexy - Status unknown";
+        }
+        else
+        {
+            background = Grey;
+            tooltip = "Sexy - Proxy OFF";
+        }
+
+        _tray.IconSource = new GeneratedIconSource
+        {
+            Text = "S",
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 56,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = _white,
+            Background = new SolidColorBrush(background)
+        };
+        _tray.ToolTipText = tooltip;
     }
 
     private void ToggleWindowFromTray()
@@ -213,6 +255,7 @@ public sealed partial class MainWindow : Window
 
             string state = Get("Proxy");
             string stateUpper = state.ToUpperInvariant();
+            UpdateTrayIcon(stateUpper);
 
             StateHeadline.Text = stateUpper.StartsWith("ON", StringComparison.Ordinal)
                 ? "Proxy is ON"
@@ -314,6 +357,7 @@ public sealed partial class MainWindow : Window
 
             StateHeadline.Text = "Scheduler unreachable";
             StateDot.Fill = Solid(Grey);
+            UpdateTrayIcon("ERROR");
 
             foreach (var block in new[]
                      {

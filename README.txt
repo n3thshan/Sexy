@@ -103,7 +103,9 @@ Buttons behave the same as the old window. "Edit Schedule" writes settings.psd1
 in the same format as before (a settings.psd1.bak backup is kept). The close
 (X) button hides the app to the tray; use the tray menu's Exit to quit. State
 is read from the scheduler on open, on focus, after a button press, and on
-Refresh Status - there is no background polling.
+Refresh Status - there is no background polling. The window can be resized
+and maximized, and the tray icon shows the proxy state: green = ON,
+red = another proxy is configured, grey = OFF.
 
 The scheduled task and the engine are NOT changed by the new window.
 

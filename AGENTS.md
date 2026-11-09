@@ -231,6 +231,13 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. Tray menu actions bring the
   window up first so results are visible.
+- The window is resizable and maximizable; content scrolls.
+- The tray icon is repainted on every status refresh: green = ON,
+  red = `OTHER*` proxy, grey = OFF or status unknown. Tooltip matches.
+- `app.manifest` declares `PerMonitorV2` DPI awareness and `supportedOS`
+  (Windows 10 GUID) — without it the window is bitmap-scaled and blurry.
+  Keep it alongside `EnableMsixTooling=true` (which fixes the published-exe
+  startup crash 0xC000027B in Microsoft.UI.Xaml.dll).
 - **Refresh model is the same as the old window:** on `Shown`/`Activated`
   (max once per 5 s), after any action, and on Refresh Status. No timers,
   no background polling.
