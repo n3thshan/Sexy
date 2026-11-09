@@ -425,7 +425,7 @@ public sealed partial class MainWindow : Window
             XamlRoot = RootGrid.XamlRoot
         };
 
-        dialog.PrimaryButtonClick += (_, args) =>
+        dialog.PrimaryButtonClick += (dialogSender, args) =>
         {
             if (!view.TryBuildSettings(out var updated))
             {
