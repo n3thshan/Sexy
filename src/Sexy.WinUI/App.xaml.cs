@@ -12,7 +12,7 @@ public partial class App : Application
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
-    private Window? m_window;
+    private MainWindow? m_window;
     private static Mutex? s_mutex;
     private static EventWaitHandle? s_showEvent;
 
