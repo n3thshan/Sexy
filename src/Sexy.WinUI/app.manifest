@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"
+<assembly manifestVersion="1.0"
+          xmlns="urn:schemas-microsoft-com:asm.v1"
           xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
   <assemblyIdentity version="1.0.0.0"
                     name="Sexy.WinUI"
                     processorArchitecture="*"
                     type="win32" />
 
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
-      <requestedPrivileges>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
         <requestedExecutionLevel level="asInvoker" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>
 
-  <!-- Tell Windows this app understands Windows 10/11. Without this block the
-       OS reports an old version and the whole window renders blurry. -->
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
     </application>
   </compatibility>
 
+  <!-- Tell Windows this app scales itself (PerMonitorV2). Without this the
+       OS bitmap-stretches the window and it looks blurry. -->
   <asmv3:application>
     <asmv3:windowsSettings>
-      <dpiAwareness>PerMonitorV2</dpiAwareness>
+      <dpiAwareness xmlns="urn:schemas-microsoft-com:asm.v3">PerMonitorV2</dpiAwareness>
     </asmv3:windowsSettings>
   </asmv3:application>
 </assembly>
