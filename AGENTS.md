@@ -214,7 +214,7 @@ WinForms window — it must remain a *reader*: only the engine changes the proxy
 
 | File | Role |
 | --- | --- |
-| `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.4.1. |
+| `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 and only ships a net10.0 build — do not upgrade without retargeting to net10). |
 | `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`) and app startup. |
 | `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar, status card, actions, tray icon. |
 | `EditScheduleDialog.xaml` / `.cs` | In-app editor for `settings.psd1`. |
