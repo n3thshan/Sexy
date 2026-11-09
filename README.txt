@@ -99,26 +99,27 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window is a split layout, titled "Sexy Proxy". The left column has two
-tappable tiles plus "Start with Windows": PROXY shows the proxy state
-(ON, OFF or OTHER) and SCHEDULE shows the schedule state (ON, OFF or
-PAUSED). The right column shows just three lines - the server, the v2rayN
-port and the next change (in 12-hour format) - with Refresh, Edit...,
-Log... and Hide buttons pinned to the bottom. Both columns are the same
-height.
+The window is a tall vertical list, titled "Sexy Proxy", styled like the
+Windows Settings pages. Each row shows a big state word with a switch (or a
+detail line with an arrow for the editor and the log):
 
-Tapping a tile toggles that thing. When another proxy is set up, or
-v2rayN is not listening, the proxy tile is blocked and ignores taps.
-The reason shows on the thin red line under the tiles.
+  Proxy            - ON, OFF or OTHER, with a line showing server and port
+                     (e.g. "v2rayN listening on 127.0.0.1:10808")
+  Schedule         - ON, OFF or PAUSED, with the window in 12-hour format
+                     (e.g. "ON 7:00 AM-12:00 AM, every day")
+  Start with Windows - launch hidden to the tray at logon
+  Edit Schedule    - opens the schedule editor
+  Open Log         - opens the last 200 lines of the log
 
-"Start with Windows" is a switch at the bottom of the left column. When
-it is on, Sexy launches hidden to the tray at logon (the HKCU Run key,
-value "Sexy", command "<exe>" --tray). The close (X) button still hides
-to tray; Exit on the tray menu quits.
+Every row has its switch (or arrow) on the right. The proxy switch is
+disabled with the reason shown as a red line when another proxy is set
+up, or v2rayN is not listening. Refresh and Hide to tray are buttons at
+the bottom.
+The window remembers its size and position between launches (stored in
+%LOCALAPPDATA%\Sexy\window.json). The default size is 400x580.
 
 Hard errors show as a thin red line in the window; there is no banner.
-The window remembers its size and position between launches (stored in
-%LOCALAPPDATA%\Sexy\window.json).
+The close (X) button hides to the tray; Exit on the tray menu quits.
 
 The tray icon is a white Fluent shield glyph (\uEA18) drawn with
 GeneratedIconSource. The glyph is tinted green when the proxy is ON.

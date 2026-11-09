@@ -19,215 +19,194 @@
                        VerticalAlignment="Center" />
         </Grid>
 
-        <!-- Content -->
+        <!-- Content: vertical Settings-style list -->
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="10" Margin="14,8,14,14" VerticalAlignment="Top">
+            <StackPanel Spacing="6" Margin="12,4,12,12" VerticalAlignment="Top">
 
-                <!-- Split: tiles left, minimal status card right -->
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Left column: tappable tiles + startup toggle -->
-                    <Grid Grid.Column="0" RowSpacing="10">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <Button x:Name="ProxyTile"
-                                Grid.Row="0"
-                                CornerRadius="10"
-                                Padding="10,10"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Click="ProxyTile_Click"
-                                AutomationProperties.Name="Toggle proxy">
-                            <StackPanel HorizontalAlignment="Center" Spacing="3">
-                                <FontIcon x:Name="ProxyIcon"
-                                          Glyph="&#xEA18;"
-                                          FontFamily="Segoe Fluent Icons"
-                                          FontSize="26"
-                                          Foreground="#A0A0A0" />
-                                <TextBlock Text="PROXY"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           CharacterSpacing="140"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock x:Name="ProxyWord"
-                                           Text="OFF"
-                                           FontSize="22"
-                                           FontWeight="Bold"
-                                           Foreground="#A0A0A0"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock x:Name="ProxySub"
-                                           Text="tap to turn ON"
-                                           FontSize="11"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button x:Name="ScheduleTile"
-                                Grid.Row="1"
-                                CornerRadius="10"
-                                Padding="10,10"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Click="ScheduleTile_Click"
-                                AutomationProperties.Name="Toggle schedule">
-                            <StackPanel HorizontalAlignment="Center" Spacing="3">
-                                <FontIcon x:Name="SchedIcon"
-                                          Glyph="&#xE917;"
-                                          FontFamily="Segoe Fluent Icons"
-                                          FontSize="26"
-                                          Foreground="#FFC94D" />
-                                <TextBlock Text="SCHEDULE"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           CharacterSpacing="140"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock x:Name="SchedWord"
-                                           Text="PAUSED"
-                                           FontSize="22"
-                                           FontWeight="Bold"
-                                           Foreground="#FFC94D"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock x:Name="SchedSub"
-                                           Text="tap to resume"
-                                           FontSize="11"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           HorizontalAlignment="Center"
-                                           TextAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-
-                        <Border Grid.Row="2"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                CornerRadius="10"
-                                Padding="14,11">
-                            <Grid ColumnSpacing="12" VerticalAlignment="Center">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Start with Windows"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center" />
-                                <ToggleSwitch x:Name="StartupSwitch"
-                                              Grid.Column="1"
-                                              OnContent=""
-                                              OffContent=""
-                                              VerticalAlignment="Center"
-                                              Toggled="StartupSwitch_Toggled"
-                                              AutomationProperties.Name="Start with Windows" />
-                            </Grid>
-                        </Border>
+                <!-- Proxy row -->
+                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        CornerRadius="10"
+                        Padding="14,12">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Proxy"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock x:Name="ProxySub"
+                                       Text="-"
+                                       FontSize="11"
+                                       Foreground="#FF99A4"
+                                       TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <TextBlock x:Name="ProxyWord"
+                                   Grid.Column="1"
+                                   Text="OFF"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#A0A0A0"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,4,0" />
+                        <ToggleSwitch x:Name="ProxySwitch"
+                                      Grid.Column="2"
+                                      OnContent=""
+                                      OffContent=""
+                                      VerticalAlignment="Center"
+                                      Toggled="ProxySwitch_Toggled"
+                                      AutomationProperties.Name="Toggle proxy" />
                     </Grid>
+                </Border>
 
-                    <!-- Right column: three lines + pinned buttons -->
-                    <Border Grid.Column="1"
-                            Background="{ThemeResource LayerFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="14,12">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                <!-- Schedule row -->
+                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        CornerRadius="10"
+                        Padding="14,12">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Schedule"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock x:Name="SchedSub"
+                                       Text="-"
+                                       FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <TextBlock x:Name="SchedWord"
+                                   Grid.Column="1"
+                                   Text="PAUSED"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#FFC94D"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,4,0" />
+                        <ToggleSwitch x:Name="SchedSwitch"
+                                      Grid.Column="2"
+                                      OnContent=""
+                                      OffContent=""
+                                      VerticalAlignment="Center"
+                                      Toggled="SchedSwitch_Toggled"
+                                      AutomationProperties.Name="Toggle schedule" />
+                    </Grid>
+                </Border>
 
-                            <!-- Server -->
-                            <Grid Grid.Row="0" Padding="2,6" ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Glyph="&#xE774;"
-                                          FontFamily="Segoe Fluent Icons"
-                                          FontSize="17"
-                                          Foreground="#9A9A9A"
-                                          VerticalAlignment="Center" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock x:Name="ValueServer" Text="-" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="server" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                </StackPanel>
-                            </Grid>
+                <!-- Start with Windows row -->
+                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        CornerRadius="10"
+                        Padding="14,12">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Start with Windows"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Launch hidden to the tray"
+                                       FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="StartupSwitch"
+                                      Grid.Column="1"
+                                      OnContent=""
+                                      OffContent=""
+                                      VerticalAlignment="Center"
+                                      Toggled="StartupSwitch_Toggled"
+                                      AutomationProperties.Name="Start with Windows" />
+                    </Grid>
+                </Border>
 
-                            <!-- v2rayN port -->
-                            <Grid Grid.Row="1" Padding="2,6" ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Glyph="&#xE73E;"
-                                          FontFamily="Segoe Fluent Icons"
-                                          FontSize="17"
-                                          Foreground="#6CCB5F"
-                                          VerticalAlignment="Center" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock x:Name="ValuePort" Text="-" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock x:Name="ValuePortSub" Text="-" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                </StackPanel>
-                            </Grid>
+                <!-- Edit schedule (clickable row) -->
+                <Button x:Name="EditButton"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        CornerRadius="10"
+                        Padding="14,12"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderThickness="0"
+                        Click="EditButton_Click"
+                        AutomationProperties.Name="Edit schedule">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Edit Schedule"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock x:Name="ScheduleSub"
+                                       Text="-"
+                                       FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="&#xE76C;"
+                                   FontFamily="Segoe Fluent Icons"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </Grid>
+                </Button>
 
-                            <!-- Next change -->
-                            <Grid Grid.Row="2" Padding="2,6" ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Glyph="&#xE917;"
-                                          FontFamily="Segoe Fluent Icons"
-                                          FontSize="17"
-                                          Foreground="#9A9A9A"
-                                          VerticalAlignment="Center" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock x:Name="ValueNext" Text="-" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock x:Name="ValueNextSub" Text="-" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
-                                </StackPanel>
-                            </Grid>
+                <!-- Open log (clickable row) -->
+                <Button x:Name="LogButton"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        CornerRadius="10"
+                        Padding="14,12"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderThickness="0"
+                        Click="LogButton_Click"
+                        AutomationProperties.Name="Open log">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Open Log"
+                                       FontSize="16"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="proxy-schedule.log"
+                                       FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="&#xE76C;"
+                                   FontFamily="Segoe Fluent Icons"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </Grid>
+                </Button>
 
-                            <!-- Pinned to the bottom -->
-                            <Grid Grid.Row="4" ColumnSpacing="8" RowSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Button x:Name="RefreshButton" Content="Refresh" Click="RefreshButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="13" Padding="6,8"/>
-                                <Button x:Name="EditButton" Grid.Column="1" Content="Edit..." Click="EditButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="13" Padding="6,8"/>
-                                <Button x:Name="LogButton" Grid.Row="1" Content="Log..." Click="LogButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="13" Padding="6,8"/>
-                                <Button x:Name="HideToTrayButton" Grid.Row="1" Grid.Column="1" Content="Hide" Click="HideToTrayButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="13" Padding="6,8"/>
-                            </Grid>
-                        </Grid>
-                    </Border>
-                </Grid>
-
-                <!-- Why the proxy tile is blocked, when it is -->
+                <!-- Why something is blocked, when it is -->
                 <TextBlock x:Name="HintText"
                            Foreground="#FF99A4"
                            Visibility="Collapsed"
                            TextWrapping="WrapWholeWords"
                            FontSize="11" />
+
+                <Grid ColumnSpacing="8" Margin="2,2,2,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="RefreshButton" Content="Refresh" Click="RefreshButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="14" Padding="6,9"/>
+                    <Button x:Name="HideToTrayButton" Grid.Column="1" Content="Hide to tray" Click="HideToTrayButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="14" Padding="6,9"/>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
     </Grid>

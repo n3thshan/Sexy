@@ -22,6 +22,8 @@ public sealed partial class MainWindow : Window
     private bool _busy;
     private bool _refreshing;
     private bool _suppressStartupToggle;
+    private bool _suppressProxyToggle;
+    private bool _suppressSchedToggle;
     private string? _lastActionError;
     private bool _exiting;
     private bool _canTurnOn = true;
@@ -51,7 +53,7 @@ public sealed partial class MainWindow : Window
         }
 
         var saved = WindowState.Load();
-        if (saved is not null && saved.Width >= 480 && saved.Height >= 360)
+        if (saved is not null && saved.Width >= 340 && saved.Height >= 480)
         {
             AppWindow.Resize(new SizeInt32(saved.Width, saved.Height));
 
@@ -65,11 +67,11 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            AppWindow.Resize(new SizeInt32(740, 520));
+            AppWindow.Resize(new SizeInt32(400, 580));
 
             var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
-            var posX = area.WorkArea.X + (area.WorkArea.Width - 740) / 2;
-            var posY = area.WorkArea.Y + (area.WorkArea.Height - 520) / 2;
+            var posX = area.WorkArea.X + (area.WorkArea.Width - 400) / 2;
+            var posY = area.WorkArea.Y + (area.WorkArea.Height - 580) / 2;
             AppWindow.Move(new PointInt32(posX, posY));
         }
 
@@ -231,26 +233,34 @@ public sealed partial class MainWindow : Window
         LogButton.IsEnabled = enabled;
         RefreshButton.IsEnabled = enabled;
         HideToTrayButton.IsEnabled = enabled;
-        ScheduleTile.IsEnabled = enabled;
-        ProxyTile.IsEnabled = enabled && (_isProxyOn || _canTurnOn);
+        SchedSwitch.IsEnabled = enabled;
+        ProxySwitch.IsEnabled = enabled && (_isProxyOn || _canTurnOn);
     }
 
-    private void SetProxyTile(bool canAct, string word, Brush wordBrush, string sub)
+    private void SetProxyRow(bool canAct, string word, Brush wordBrush, string sub)
     {
         ProxyWord.Text = word;
         ProxyWord.Foreground = wordBrush;
-        ProxyIcon.Foreground = wordBrush;
         ProxySub.Text = sub;
-        ProxyTile.IsEnabled = canAct;
-        ProxyTile.Opacity = canAct ? 1.0 : 0.75;
+
+        _suppressProxyToggle = true;
+        ProxySwitch.IsOn = _isProxyOn;
+        _suppressProxyToggle = false;
+
+        ProxySwitch.IsEnabled = canAct;
+        ProxySwitch.Opacity = canAct ? 1.0 : 0.5;
     }
 
-    private void SetScheduleTile(string word, Brush wordBrush, string sub)
+    private void SetSchedRow(string word, Brush wordBrush, string sub, string schedText)
     {
         SchedWord.Text = word;
         SchedWord.Foreground = wordBrush;
-        SchedIcon.Foreground = wordBrush;
         SchedSub.Text = sub;
+        ScheduleSub.Text = schedText;
+
+        _suppressSchedToggle = true;
+        SchedSwitch.IsOn = !_isPaused;
+        _suppressSchedToggle = false;
     }
 
     private async Task UpdateStatusAsync()
@@ -274,60 +284,32 @@ public sealed partial class MainWindow : Window
             UpdateTrayIcon(stateUpper);
 
             var server = Get("Server");
-            ValueServer.Text = server;
-            ToolTipService.SetToolTip(ValueServer, server);
-
             var portText = Get("v2rayN port", string.Empty);
             bool portListening;
             if (string.IsNullOrWhiteSpace(portText))
             {
                 // Missing data must never look healthy.
                 portListening = false;
-                ValuePort.Text = "unknown";
-                ValuePort.Foreground = WordRed;
-                ValuePortSub.Text = "port unknown - not reported";
             }
             else
             {
                 portListening = !portText.TrimStart().StartsWith("NOT listening", StringComparison.OrdinalIgnoreCase);
-                ValuePort.Text = portListening ? "v2rayN listening" : "NOT listening";
-                ValuePort.Foreground = portListening ? WordGreen : WordRed;
-                ValuePortSub.Text = portText;
             }
 
             var pausedText = Get("Paused", "no");
             _isPaused = pausedText.StartsWith("YES", StringComparison.OrdinalIgnoreCase);
 
-            // Next change, shown in 12-hour format
-            var nextRaw = Get("Next scheduled change", "unknown").Trim();
-            if (DateTime.TryParseExact(
-                    nextRaw,
-                    "yyyy-MM-dd HH:mm",
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None,
-                    out var parsedNext))
-            {
-                ValueNext.Text = parsedNext.ToString("h:mm tt");
-                var span = parsedNext - DateTime.Now;
-                if (span.TotalSeconds <= 0)
-                {
-                    ValueNextSub.Text = "next change (due now)";
-                }
-                else if (span.TotalDays < 1)
-                {
-                    ValueNextSub.Text = $"next change (in {(int)span.TotalHours}h {span.Minutes}m)";
-                }
-                else
-                {
-                    ValueNextSub.Text = $"next change (in {(int)span.TotalDays}d {span.Hours}h)";
-                }
-            }
-            else
-            {
-                ValueNext.Text = "-";
-                ValueNextSub.Text = "next change: " + nextRaw;
-            }
-            ToolTipService.SetToolTip(ValueNext, nextRaw);
+            // Window line shown in 12-hour format, e.g. "ON 7:00 AM-12:00 AM, every day"
+            var schedHint = settings is not null
+                ? $"ON {EngineService.To12Hour(settings.OnStart)}-{EngineService.To12Hour(settings.OnEnd)}, {EngineService.FormatDays(settings.Days)}"
+                : Get("Schedule");
+
+            // Compact subline for the proxy row: server + port health
+            var proxySub = string.IsNullOrWhiteSpace(portText)
+                ? "port unknown - ON blocked"
+                : portListening
+                    ? $"v2rayN listening on {server}"
+                    : "v2rayN is not listening";
 
             // ---------- Proxy tile ----------
             _canTurnOn = true;
@@ -336,47 +318,43 @@ public sealed partial class MainWindow : Window
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable while another proxy is configured. Clear it first.";
-                SetProxyTile(false, "OTHER", WordRed, "another proxy is set");
+                SetProxyRow(false, "OTHER", WordRed, "another proxy is set");
             }
             else if (string.IsNullOrWhiteSpace(Get("v2rayN port", string.Empty)))
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: the scheduler did not report the v2rayN port.";
-                SetProxyTile(false, "OFF", WordGrey, "port unknown - ON blocked");
+                SetProxyRow(false, "OFF", WordGrey, proxySub);
             }
             else if (!portListening)
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: v2rayN is not listening, so the proxy would break your connection.";
-                SetProxyTile(false, "OFF", WordGrey, "v2rayN is not listening");
+                SetProxyRow(false, "OFF", WordGrey, proxySub);
             }
             else if (_isProxyOn)
             {
-                SetProxyTile(true, "ON", WordGreen, "tap to turn OFF");
+                SetProxyRow(true, "ON", WordGreen, proxySub);
             }
             else
             {
-                SetProxyTile(true, "OFF", WordGrey, "tap to turn ON");
+                SetProxyRow(true, "OFF", WordGrey, proxySub);
             }
 
             // ---------- Schedule tile ----------
             var nowRaw = Get("Schedule state now", string.Empty);
             bool insideWindow = nowRaw.StartsWith("On", StringComparison.OrdinalIgnoreCase);
-            // Schedule window in 12-hour format, e.g. "ON 7:00 AM-12:00 AM, every day"
-            var schedHint = settings is not null
-                ? $"ON {EngineService.To12Hour(settings.OnStart)}-{EngineService.To12Hour(settings.OnEnd)}, {EngineService.FormatDays(settings.Days)}"
-                : Get("Schedule");
             if (_isPaused)
             {
-                SetScheduleTile("PAUSED", WordAmber, "tap to resume");
+                SetSchedRow("PAUSED", WordAmber, "paused - tap to resume", schedHint + " - paused");
             }
             else if (insideWindow)
             {
-                SetScheduleTile("ON", WordGreen, schedHint + " - tap to pause");
+                SetSchedRow("ON", WordGreen, "inside the window - tap to pause", schedHint);
             }
             else
             {
-                SetScheduleTile("OFF", WordGrey, schedHint + " (outside window)");
+                SetSchedRow("OFF", WordGrey, "outside the schedule window", schedHint);
             }
 
             if (hint.Length > 0)
@@ -403,11 +381,8 @@ public sealed partial class MainWindow : Window
             _isPaused = false;
 
             UpdateTrayIcon("ERROR");
-            SetProxyTile(false, "OFF", WordGrey, "status unavailable");
-            SetScheduleTile("?", WordGrey, "status unavailable");
-
-            ValueServer.Text = ValuePort.Text = ValuePortSub.Text = "-";
-            ValueNext.Text = ValueNextSub.Text = "-";
+            SetProxyRow(false, "OFF", WordGrey, "status unavailable");
+            SetSchedRow("?", WordGrey, "status unavailable", "-");
 
             // Hard errors surface as a thin red line instead of a banner.
             HintText.Text = "Could not read status: " + ex.Message;
@@ -469,8 +444,17 @@ public sealed partial class MainWindow : Window
         await UpdateStatusAsync();
     }
 
-    private async void ProxyTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isProxyOn ? "Off" : "On");
-    private async void ScheduleTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isPaused ? "Resume" : "Pause");
+    private async void ProxySwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressProxyToggle) return;
+        await DoActionAsync(_isProxyOn ? "Off" : "On");
+    }
+
+    private async void SchedSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressSchedToggle) return;
+        await DoActionAsync(_isPaused ? "Resume" : "Pause");
+    }
 
     private void StartupSwitch_Toggled(object sender, RoutedEventArgs e)
     {
@@ -552,8 +536,8 @@ public sealed partial class MainWindow : Window
             TextWrapping = TextWrapping.NoWrap,
             FontFamily = new FontFamily("Consolas"),
             FontSize = 12,
-            Width = 560,
-            Height = Math.Max(180, Math.Min(380, available - 220))
+            Width = 340,
+            Height = Math.Max(180, Math.Min(320, available - 220))
         };
 
         var dialog = new ContentDialog

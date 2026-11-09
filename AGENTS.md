@@ -216,7 +216,7 @@ WinForms window — it must remain a *reader*: only the engine changes the proxy
 | --- | --- |
 | `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 and only ships a net10.0 build — do not upgrade without retargeting to net10). |
 | `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`); a second launch signals the running instance (`Local\SexyShowWindow`) to show its window; `--tray` starts hidden to the tray; DPI PerMonitorV2 P/Invoke in the constructor. |
-| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar ("Sexy Proxy"), left column = two tappable tiles + Start with Windows toggle, right column = three-line status card, tray icon. |
+| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar ("Sexy Proxy"), tall vertical Settings-style list (Proxy / Schedule / Start-with-Windows rows + Edit Schedule & Open Log rows + Refresh/Hide buttons), tray icon. |
 | `EditScheduleDialog.xaml` / `.cs` | In-app editor for `settings.psd1`. |
 | `EngineService.cs` | Spawns `Sexy.ps1 -Action <x>`, parses `Key: value` Status lines, reads the log tail, Task Scheduler state via `TaskInfo.ps1`. Finds the engine via: `SEXY_ENGINE_DIR` env var → exe folder → up to 5 parent folders → `C:\Users\Admin\Documents\Projects\v2rayN-proxy-schedule`. |
 | `SettingsService.cs` | Regex read/write of `settings.psd1` (writer keeps comments, backs up to `settings.psd1.bak` first). |
@@ -234,16 +234,14 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. The window is resizable and
   maximizable; content scrolls.
-- **Layout:** split panel - left column = two tappable tiles in a Grid with
-  `*` rows (tiles stretch to equal height) plus a `Start with Windows` row
-  with a ToggleSwitch; right column = three-line status card (Server /
-  v2rayN port / Next change, next change in 12-hour format) + a 2x2 button
-  grid (Refresh / Edit / Log / Hide) pinned to the bottom; same height
-  guaranteed by the grid. Tiles are PROXY / SCHEDULE: plain Fluent shield
-  glyph (`FontIcon` ea18) / clock glyph (e917), big state word, tap hint.
-  Tile tap calls the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`).
-  Blocked proxy tile = `OTHER`/`OFF` with reason; taps ignored. The
-  "Start with Windows" toggle replaces the old footer row.
+- **Layout (V2 vertical list):** the window is a tall Settings-style list
+  (~400x580 default), titled "Sexy Proxy". Rows are flat cards with an
+  action on the right: Proxy row (big word + server/port line + switch,
+  taps call On/Off), Schedule row (big word + 12-hour window line +
+  switch, taps call Resume/Pause), Start with Windows row (switch), Edit
+  Schedule / Open Log (chevron rows), Refresh and Hide buttons at the
+  bottom + thin red HintText line for blocked/error states. Blocked proxy
+  row = `OTHER`/`OFF` with the reason line; switch disabled.
 - **Tray icon:** `GeneratedIconSource`, text `\uEA18` (Shield) in Segoe Fluent
   Icons. Near-white = off; the same glyph tinted green = ON (green tint since
   there is no proven badge/dot path). File-based `BitmapImage`/PNG tray icons
