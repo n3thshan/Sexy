@@ -229,11 +229,21 @@ Behavior notes:
   task, the log and `settings.psd1` stay shared. Set `SEXY_ENGINE_DIR`
   to point elsewhere.
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
-  Left-click on the tray toggles the window. Tray menu actions bring the
-  window up first so results are visible.
-- The window is resizable and maximizable; content scrolls.
-- The tray icon is repainted on every status refresh: green = ON,
-  red = `OTHER*` proxy, grey = OFF or status unknown. Tooltip matches.
+  Left-click on the tray toggles the window. The window is resizable and
+  maximizable; content scrolls.
+- **Layout:** window = two tappable tile buttons (PROXY / SCHEDULE, each a
+  state word + tap hint + Fluent icon ea18/e917), a hint line for the
+  turn-ON-blocked reason, Refresh/Edit/Log/Hide-to-tray, result InfoBar.
+  The tile tap calls the same engine action as the tray menu
+  (`On`/`Off`/`Resume`/`Pause`). Blocked proxy tile = `OTHER`/`OFF` with
+  reason; taps ignored.
+- **Tray icon:** plain white Fluent shield PNG (`Assets/tray-shield.png`);
+  with proxy ON a green badge dot is composited
+  (`Assets/tray-shield-on.png`). Shown via `IconSource = BitmapImage`
+  (ImageSource), not GeneratedIconSource. Tooltip carries OFF/OTHER/ON.
+- **Tray actions run hidden** and report via balloon tip
+  (`TaskbarIcon.ShowNotification`); they never unhide the window.
+- Tray icon is repainted on every status refresh.
 - DPI awareness is set at runtime in `App` (P/Invoke
   `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`) before any window is
   created. Do NOT add an `app.manifest`/`ApplicationManifest`: the MSIX

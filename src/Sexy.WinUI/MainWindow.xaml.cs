@@ -1,30 +1,34 @@
 using System.Text.RegularExpressions;
-using H.NotifyIcon;
+using System.IO;
 using Windows.UI;
-using Microsoft.UI;
+using H.NotifyIcon;
+using H.NotifyIcon.Core;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 
 namespace Sexy;
 
 public sealed partial class MainWindow : Window
 {
-    private static readonly Color Green = ColorHelper.FromArgb(255, 15, 123, 15);
-    private static readonly Color Red = ColorHelper.FromArgb(255, 196, 43, 28);
-    private static readonly Color Grey = ColorHelper.FromArgb(255, 134, 134, 134);
-    private static readonly Color TrayBlue = ColorHelper.FromArgb(255, 0, 120, 215);
+    // Tile word / icon colors (light variants read well on the dark theme).
+    private static readonly Brush WordGreen = new SolidColorBrush(Color.FromArgb(255, 108, 203, 95));
+    private static readonly Brush WordAmber = new SolidColorBrush(Color.FromArgb(255, 255, 201, 77));
+    private static readonly Brush WordRed = new SolidColorBrush(Color.FromArgb(255, 255, 153, 164));
+    private static readonly Brush WordGrey = new SolidColorBrush(Color.FromArgb(255, 160, 160, 160));
 
     private readonly EngineService _engine = new();
-    private readonly Brush _white = new SolidColorBrush(ColorHelper.FromArgb(255, 255, 255, 255));
     private TaskbarIcon? _tray;
 
     private bool _busy;
     private bool _refreshing;
     private bool _exiting;
     private bool _canTurnOn = true;
+    private bool _isProxyOn;
+    private bool _isPaused;
     private bool _lastError;
     private DateTime _lastRefresh = DateTime.MinValue;
 
@@ -50,11 +54,11 @@ public sealed partial class MainWindow : Window
             presenter.IsMinimizable = true;
         }
 
-        AppWindow.Resize(new SizeInt32(570, 640));
+        AppWindow.Resize(new SizeInt32(570, 460));
 
         var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
         var posX = area.WorkArea.X + (area.WorkArea.Width - 570) / 2;
-        var posY = area.WorkArea.Y + (area.WorkArea.Height - 640) / 2;
+        var posY = area.WorkArea.Y + (area.WorkArea.Height - 460) / 2;
         AppWindow.Move(new PointInt32(posX, posY));
 
         AppWindow.Closing += OnAppWindowClosing;
@@ -67,7 +71,8 @@ public sealed partial class MainWindow : Window
 
     // ---------------------------------------------------------------------
     // Tray icon (H.NotifyIcon.WinUI). The Win32 popup menu calls commands,
-    // not Click handlers, so every item gets an ICommand.
+    // not Click handlers, so every item gets an ICommand. The icon is the
+    // Fluent shield; a green badge dot appears while the proxy is ON.
     // ---------------------------------------------------------------------
     private void CreateTrayIcon()
     {
@@ -110,60 +115,33 @@ public sealed partial class MainWindow : Window
             ToolTipText = "Sexy - v2rayN schedule",
             NoLeftClickDelay = true
         };
-        _tray.IconSource = new GeneratedIconSource
-        {
-            Text = "S",
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 56,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = _white,
-            Background = new SolidColorBrush(TrayBlue)
-        };
+        _tray.IconSource = TrayBitmap(proxyOn: false);
         _tray.ContextFlyout = menu;
         _tray.LeftClickCommand = new RelayCommand(ToggleWindowFromTray);
 
         RootGrid.Children.Add(_tray);
     }
 
-    // Repaints the tray icon so it matches the proxy state: green = ON,
-    // red = another proxy is set, grey = OFF or unknown.
+    private static BitmapImage TrayBitmap(bool proxyOn)
+    {
+        var name = proxyOn ? "tray-shield-on.png" : "tray-shield.png";
+        var path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
+        return new BitmapImage(new Uri(path, UriKind.Absolute));
+    }
+
     private void UpdateTrayIcon(string stateUpper)
     {
         if (_tray is null) return;
 
-        Color background;
-        string tooltip;
-        if (stateUpper.StartsWith("ON", StringComparison.Ordinal))
-        {
-            background = Green;
-            tooltip = "Sexy - Proxy ON";
-        }
-        else if (stateUpper.StartsWith("OTHER", StringComparison.Ordinal))
-        {
-            background = Red;
-            tooltip = "Sexy - Another proxy is configured";
-        }
-        else if (stateUpper == "ERROR")
-        {
-            background = Grey;
-            tooltip = "Sexy - Status unknown";
-        }
-        else
-        {
-            background = Grey;
-            tooltip = "Sexy - Proxy OFF";
-        }
-
-        _tray.IconSource = new GeneratedIconSource
-        {
-            Text = "S",
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 56,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = _white,
-            Background = new SolidColorBrush(background)
-        };
-        _tray.ToolTipText = tooltip;
+        bool proxyOn = stateUpper.StartsWith("ON", StringComparison.Ordinal);
+        _tray.IconSource = TrayBitmap(proxyOn);
+        _tray.ToolTipText = stateUpper.StartsWith("ON", StringComparison.Ordinal)
+            ? "Sexy - Proxy ON"
+            : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)
+                ? "Sexy - Another proxy is configured"
+                : stateUpper == "ERROR"
+                    ? "Sexy - Status unknown"
+                    : "Sexy - Proxy OFF";
     }
 
     private void ToggleWindowFromTray()
@@ -186,10 +164,25 @@ public sealed partial class MainWindow : Window
 
     private void TrayAction(string action)
     {
-        // A state-changing tray action must never run blind: bring the
-        // window up first so the user sees the result banner.
-        ShowFromTray();
-        _ = DoActionAsync(action);
+        // Tray actions run hidden; the outcome is shown as a balloon tip,
+        // not by yanking the window open.
+        _ = DoActionAsync(action, fromTray: true);
+    }
+
+    private void ShowTrayBalloon(string message, bool isError)
+    {
+        if (_tray is null) return;
+
+        _tray.ShowNotification(
+            "Sexy",
+            message,
+            isError ? NotificationIcon.Error : NotificationIcon.Info,
+            null,       // custom icon handle
+            true,       // largeIcon
+            true,       // sound
+            true,       // respectQuietTime
+            false,      // realtime
+            null);      // timeout
     }
 
     private void ExitApp()
@@ -221,21 +214,31 @@ public sealed partial class MainWindow : Window
     // ---------------------------------------------------------------------
     private void SetControlsEnabled(bool enabled)
     {
-        OnButton.IsEnabled = enabled;
-        OffButton.IsEnabled = enabled;
-        ResumeButton.IsEnabled = enabled;
-        PauseButton.IsEnabled = enabled;
         EditButton.IsEnabled = enabled;
         LogButton.IsEnabled = enabled;
         RefreshButton.IsEnabled = enabled;
-
-        if (enabled && !_canTurnOn)
-        {
-            OnButton.IsEnabled = false;
-        }
+        HideToTrayButton.IsEnabled = enabled;
+        ScheduleTile.IsEnabled = enabled;
+        ProxyTile.IsEnabled = enabled && (_isProxyOn || _canTurnOn);
     }
 
-    private static Brush Solid(Color color) => new SolidColorBrush(color);
+    private void SetProxyTile(bool canAct, string word, Brush wordBrush, string sub)
+    {
+        ProxyWord.Text = word;
+        ProxyWord.Foreground = wordBrush;
+        ProxyIcon.Foreground = wordBrush;
+        ProxySub.Text = sub;
+        ProxyTile.IsEnabled = canAct;
+        ProxyTile.Opacity = canAct ? 1.0 : 0.75;
+    }
+
+    private void SetScheduleTile(string word, Brush wordBrush, string sub, bool paused)
+    {
+        SchedWord.Text = word;
+        SchedWord.Foreground = wordBrush;
+        SchedIcon.Foreground = wordBrush;
+        SchedSub.Text = sub;
+    }
 
     private async Task UpdateStatusAsync()
     {
@@ -248,36 +251,14 @@ public sealed partial class MainWindow : Window
         try
         {
             var map = await _engine.GetStatusAsync();
-            var settings = SettingsService.TryRead(_engine.EngineDir);
 
             string Get(string key, string fallback = "-") =>
                 map.TryGetValue(key, out var value) ? value : fallback;
 
             string state = Get("Proxy");
             string stateUpper = state.ToUpperInvariant();
+            _isProxyOn = stateUpper.StartsWith("ON", StringComparison.Ordinal);
             UpdateTrayIcon(stateUpper);
-
-            StateHeadline.Text = stateUpper.StartsWith("ON", StringComparison.Ordinal)
-                ? "Proxy is ON"
-                : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)
-                    ? "Another proxy is configured"
-                    : "Proxy is OFF";
-            StateDot.Fill = stateUpper.StartsWith("ON", StringComparison.Ordinal)
-                ? Solid(Green)
-                : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)
-                    ? Solid(Red)
-                    : Solid(Grey);
-
-            ValueProxy.Text = state;
-            ValueProxy.Foreground = stateUpper.StartsWith("ON", StringComparison.Ordinal)
-                ? Solid(Green)
-                : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)
-                    ? Solid(Red)
-                    : null; // keep the theme default
-
-            var server = Get("Server");
-            ValueServer.Text = server;
-            ToolTipService.SetToolTip(ValueServer, server);
 
             var portText = Get("v2rayN port", string.Empty);
             bool portListening;
@@ -286,63 +267,59 @@ public sealed partial class MainWindow : Window
                 // Missing data must never look healthy.
                 portListening = false;
                 portText = "unknown (not reported by the scheduler)";
-                ValuePort.Foreground = Solid(Red);
             }
             else
             {
                 portListening = !portText.TrimStart().StartsWith("NOT listening", StringComparison.OrdinalIgnoreCase);
-                ValuePort.Foreground = portListening ? Solid(Green) : Solid(Red);
             }
-            ValuePort.Text = portText;
-            ToolTipService.SetToolTip(ValuePort, portText);
-
-            ValueSchedule.Text = settings is not null
-                ? $"ON {settings.OnStart}-{settings.OnEnd}, {EngineService.FormatDays(settings.Days)}"
-                : Get("Schedule");
-
-            ValueNow.Text = Get("Schedule state now");
 
             var pausedText = Get("Paused", "no");
-            var isPaused = pausedText.StartsWith("YES", StringComparison.OrdinalIgnoreCase);
-            if (isPaused)
-            {
-                var since = _engine.GetPausedSince();
-                pausedText = since.HasValue
-                    ? $"yes, since {since.Value:yyyy-MM-dd HH:mm} ({EngineService.FormatAgo(since.Value)})"
-                    : "yes";
-                ValuePaused.Foreground = Solid(Red);
-            }
-            else
-            {
-                pausedText = "no";
-                ValuePaused.Foreground = null;
-            }
-            ValuePaused.Text = pausedText;
+            _isPaused = pausedText.StartsWith("YES", StringComparison.OrdinalIgnoreCase);
 
-            var nextRaw = Get("Next scheduled change", "unknown");
-            ValueNext.Text = EngineService.FormatNext(nextRaw);
-            ToolTipService.SetToolTip(ValueNext, nextRaw);
-
-            ValueLastRun.Text = await _engine.GetScheduledTaskSummaryAsync();
-            ToolTipService.SetToolTip(ValueLastRun, ValueLastRun.Text);
-
-            // Decide whether "Turn Proxy ON" can work at all.
+            // ---------- Proxy tile ----------
             _canTurnOn = true;
             var hint = string.Empty;
             if (stateUpper.StartsWith("OTHER", StringComparison.Ordinal))
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable while another proxy is configured. Clear it first.";
+                SetProxyTile(false, "OTHER", WordRed, "another proxy is set");
             }
             else if (string.IsNullOrWhiteSpace(Get("v2rayN port", string.Empty)))
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: the scheduler did not report the v2rayN port.";
+                SetProxyTile(false, "OFF", WordGrey, "port unknown - ON blocked");
             }
             else if (!portListening)
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: v2rayN is not listening, so the proxy would break your connection.";
+                SetProxyTile(false, "OFF", WordGrey, "v2rayN is not listening");
+            }
+            else if (_isProxyOn)
+            {
+                SetProxyTile(true, "ON", WordGreen, "tap to turn OFF");
+            }
+            else
+            {
+                SetProxyTile(true, "OFF", WordGrey, "tap to turn ON");
+            }
+
+            // ---------- Schedule tile ----------
+            var nowRaw = Get("Schedule state now", string.Empty);
+            bool insideWindow = nowRaw.StartsWith("On", StringComparison.OrdinalIgnoreCase);
+            if (_isPaused)
+            {
+                SetScheduleTile("PAUSED", WordAmber, "tap to resume", paused: true);
+            }
+            else if (insideWindow)
+            {
+                SetScheduleTile("ON", WordGreen, "tap to pause", paused: false);
+            }
+            else
+            {
+                SetScheduleTile("OFF", WordGrey, "outside window - tap to pause", paused: false);
             }
 
             HintText.Text = hint;
@@ -354,19 +331,12 @@ public sealed partial class MainWindow : Window
         {
             _lastError = true;
             _canTurnOn = false;
+            _isProxyOn = false;
+            _isPaused = false;
 
-            StateHeadline.Text = "Scheduler unreachable";
-            StateDot.Fill = Solid(Grey);
             UpdateTrayIcon("ERROR");
-
-            foreach (var block in new[]
-                     {
-                         ValueProxy, ValueServer, ValuePort, ValueSchedule,
-                         ValueNow, ValuePaused, ValueNext, ValueLastRun
-                     })
-            {
-                block.Text = "-";
-            }
+            SetProxyTile(false, "OFF", WordGrey, "status unavailable");
+            SetScheduleTile("?", WordGrey, "status unavailable", paused: false);
 
             HintText.Visibility = Visibility.Collapsed;
             ShowResult($"Could not read status: {ex.Message}", InfoBarSeverity.Error);
@@ -394,9 +364,13 @@ public sealed partial class MainWindow : Window
     // ---------------------------------------------------------------------
     // Actions
     // ---------------------------------------------------------------------
-    private async Task DoActionAsync(string action)
+    private async Task DoActionAsync(string action, bool fromTray = false)
     {
-        if (_busy || _refreshing) return;
+        if (_busy || _refreshing)
+        {
+            if (fromTray) ShowTrayBalloon("Another action is still running.", isError: false);
+            return;
+        }
 
         _busy = true;
         SetControlsEnabled(false);
@@ -410,23 +384,28 @@ public sealed partial class MainWindow : Window
                     ? result.Error.Trim()
                     : "Done.";
 
+            InfoBarSeverity severity;
             if (result.ExitCode != 0)
             {
-                ShowResult(text, InfoBarSeverity.Error);
+                severity = InfoBarSeverity.Error;
             }
             else if (Regex.IsMatch(text, "not changed|already|Nothing to do", RegexOptions.IgnoreCase))
             {
                 // The engine refused or had nothing to do; do not paint it green.
-                ShowResult(text, InfoBarSeverity.Informational);
+                severity = InfoBarSeverity.Informational;
             }
             else
             {
-                ShowResult(text, InfoBarSeverity.Success);
+                severity = InfoBarSeverity.Success;
             }
+
+            ShowResult(text, severity);
+            if (fromTray) ShowTrayBalloon(text, severity == InfoBarSeverity.Error);
         }
         catch (Exception ex)
         {
             ShowResult(ex.Message, InfoBarSeverity.Error);
+            if (fromTray) ShowTrayBalloon(ex.Message, isError: true);
         }
         finally
         {
@@ -437,10 +416,10 @@ public sealed partial class MainWindow : Window
         await UpdateStatusAsync();
     }
 
-    private async void OnButton_Click(object sender, RoutedEventArgs e) => await DoActionAsync("On");
-    private async void OffButton_Click(object sender, RoutedEventArgs e) => await DoActionAsync("Off");
-    private async void ResumeButton_Click(object sender, RoutedEventArgs e) => await DoActionAsync("Resume");
-    private async void PauseButton_Click(object sender, RoutedEventArgs e) => await DoActionAsync("Pause");
+    private async void ProxyTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isProxyOn ? "Off" : "On");
+    private async void ScheduleTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isPaused ? "Resume" : "Pause");
+
+    private async void HideToTrayButton_Click(object sender, RoutedEventArgs e) => AppWindow.Hide();
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
@@ -450,8 +429,6 @@ public sealed partial class MainWindow : Window
             ShowResult("Status refreshed.", InfoBarSeverity.Informational);
         }
     }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => ExitApp();
 
     private async void EditButton_Click(object sender, RoutedEventArgs e)
     {
