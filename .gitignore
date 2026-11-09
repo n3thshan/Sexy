@@ -1,0 +1,13 @@
+# Runtime state (engine-owned; never publish)
+proxy-schedule.log
+proxy-schedule.log.1
+paused.flag
+paused.flag.*
+settings.psd1.bak
+
+# Build output
+bin/
+obj/
+.vs/
+*.user
+artifacts/

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>Sexy</RootNamespace>
+    <AssemblyName>Sexy.WinUI</AssemblyName>
+
+    <!-- Unpackaged, self-contained: no installer, no runtime prerequisites. -->
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Platforms>x64</Platforms>
+
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Queries Task Scheduler for the "Last check" row. Copied next to the exe. -->
+    <None Include="TaskInfo.ps1" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
