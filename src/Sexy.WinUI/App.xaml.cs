@@ -14,7 +14,6 @@ public partial class App : Application
 
     private MainWindow? m_window;
     private static Mutex? s_mutex;
-    private static EventWaitHandle? s_showEvent;
 
     public App()
     {
@@ -28,8 +27,8 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Single instance: a second launch signals the running instance to
-        // raise its window, then exits quietly.
+        // Single instance: a second launch exits quietly. The app lives in
+        // the system tray; the shield is the whole interface.
         s_mutex = new Mutex(false, @"Local\SexyWinUI");
         bool have;
         try
@@ -44,53 +43,14 @@ public partial class App : Application
 
         if (!have)
         {
-            // Already running (e.g. hidden in the tray after a logon start).
-            // Ask the running instance to bring its window up, then exit.
-            try
-            {
-                if (EventWaitHandle.OpenExisting(@"Local\SexyShowWindow") is { } show)
-                {
-                    show.Set();
-                    show.Dispose();
-                }
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                // The running instance is mid-shutdown; nothing to signal.
-            }
-
             Environment.Exit(0);
             return;
         }
 
-        // Create the window first, then listen for "show yourself" from later launches.
         m_window = new MainWindow();
-        var queue = m_window.DispatcherQueue;
-        s_showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\SexyShowWindow");
-        var showThread = new Thread(() =>
-        {
-            while (true)
-            {
-                s_showEvent.WaitOne();
-                queue?.TryEnqueue(() => m_window?.ShowFromTray());
-            }
-        })
-        {
-            IsBackground = true
-        };
-        showThread.Start();
-
-        bool startInTray = Environment.GetCommandLineArgs()
-            .Any(a => a.Equals("--tray", StringComparison.OrdinalIgnoreCase));
-
-        if (startInTray)
-        {
-            // Launched by the "Start with Windows" entry: no window, just the tray.
-            m_window.HideToTray();
-        }
-        else
-        {
-            m_window.Activate();
-        }
+        // Activate once so the window's visual tree loads and the tray icon
+        // is created, then hide it: the app lives in the tray from here on.
+        m_window.Activate();
+        m_window.HideToTray();
     }
 }

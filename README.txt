@@ -79,9 +79,9 @@ paused.flag         Exists only while the schedule is paused.
 SexyLauncher.cs and SexyToggle.cs are the sources for the two compiled
 files. They are only needed if you want to rebuild; see AGENTS.md.
 
-Fresh builds (the WinUI 3 preview)
+Fresh builds (the WinUI 3 tray app)
 ----------------------------------
-The repository also contains a newer, "Mica"-style window built with WinUI 3:
+The repository also contains a newer, tray-based app built with WinUI 3:
 src\Sexy.WinUI. It is a modern replacement for the small window and it
 is in testing. The old window (SexyControl.ps1) is untouched and keeps
 working in the meantime.
@@ -91,7 +91,25 @@ Right now it is built by a GitHub Actions workflow on the repo. Download the
 "Sexy-portable" artifact from the latest green build, unzip it
 anywhere, and run Sexy.WinUI.exe.
 
-The new window looks for the engine (Sexy.ps1) in this order:
+The app is TRAY-ONLY. There is no main window: it sits in the system tray
+as a Fluent shield. Left-click the shield to open the panel, which is the
+whole interface - two rows: Proxy and Schedule, each showing the state in
+big letters with a switch next to it. Tap a row's switch to toggle that
+thing. Blocked states (another proxy set / v2rayN not listening) disable
+the proxy switch and show the reason underneath.
+
+Footer of the panel:
+  Refresh         - re-read the scheduler
+  Edit Schedule... - write settings.psd1 (a .bak copy is kept)
+  Open Log...      - the last 200 lines of the log
+  Exit             - quit
+
+There is also a "Start with Windows (to tray)" switch at the bottom of the
+panel. When on, Sexy starts at logon with no window at all (the HKCU Run
+key, value "Sexy"). The right-click tray menu has Turn ON/OFF, Pause/Resume
+and Exit.
+
+The new app looks for the engine (Sexy.ps1) in this order:
   1. The folder named by the SEXY_ENGINE_DIR environment variable.
   2. The folder the exe is in.
   3. Up to five parent folders of the exe.
@@ -99,41 +117,13 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window is a split layout. The left column has two tappable tiles:
-PROXY shows the proxy state (ON, OFF or OTHER) and SCHEDULE shows the
-schedule state (ON or PAUSED). The right column is the status card
-(server, v2rayN port, schedule, right now, paused, next change, last
-check) with Refresh, Edit..., Log... and Hide buttons underneath. Both
-columns are the same height, and the two tiles stretch to fill the
-column.
+The tray icon is a white Fluent shield glyph (\uEA18). It turns green when
+the proxy is ON. Tray actions are silent; there are no balloons anywhere.
+State is read from the scheduler on open, after any action, and on
+Refresh - there is no background polling.
 
-Tapping a tile toggles that thing. When another proxy is set up, or
-v2rayN is not listening, the proxy tile turns red with the reason and
-ignores taps.
-
-There is no result banner anymore. Hard errors show as a thin red line
-in the window.
-
-The window remembers its size between launches (stored in
-%LOCALAPPDATA%\Sexy\window.json). The default size is 740x520.
-
-There is a "Start with Windows (to tray)" switch in a footer row of the
-main window. When it is on, Sexy launches hidden to the tray at logon
-(the HKCU Run key, value "Sexy", command "<exe>" --tray). The close (X)
-button still hides to tray; Exit on the tray menu quits.
-
-The tray icon is a white Fluent shield glyph (\uEA18) drawn with
-GeneratedIconSource. The glyph is tinted green when the proxy is ON.
-There are no balloon notifications anywhere; tray actions are silent.
-
-"Edit Schedule" writes settings.psd1 in the same format as before (a
-settings.psd1.bak backup is kept). State is read from the scheduler
-on open, on focus, after an action, and on Refresh Status - there is no
-background polling. The window can be resized and maximized. If the
-window is small, the Edit Schedule and Open Log dialogs scroll their
-content instead of clipping.
-
-The scheduled task and the engine are NOT changed by the new window.
+The Edit Schedule and Open Log dialogs scroll their content when they do
+not fit. The scheduled task and the engine are NOT changed by the new app.
 
 No console flashes
 ------------------
