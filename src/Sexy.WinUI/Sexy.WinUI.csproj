@@ -28,6 +28,8 @@
   <ItemGroup>
     <!-- Queries Task Scheduler for the "Last check" row. Copied next to the exe. -->
     <None Include="TaskInfo.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Assets\tray-shield.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Assets\tray-shield-on.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

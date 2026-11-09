@@ -99,20 +99,25 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window has two big tiles: the left one shows the proxy state, the right
-one the schedule state. Tap a tile to toggle that thing (proxy ON/OFF, or
-pause/resume the schedule). When another proxy is set up, or v2rayN is not
-listening, the proxy tile turns red with the reason and ignores taps. Below
-the tiles are Refresh Status, Edit Schedule..., Open Log..., and Hide to tray.
+The window has two tappable tiles on the left (the proxy tile shows the
+proxy state, the schedule tile shows the schedule state) - tap a tile to
+toggle that thing. On the right are the details (server, port, schedule,
+right now, paused, next change, last check) with Refresh, Edit..., Log...,
+Hide buttons underneath. When another proxy is set up, or v2rayN is not
+listening, the proxy tile turns red with the reason and ignores taps.
 "Edit Schedule" writes settings.psd1 in the same format as before (a
 settings.psd1.bak backup is kept). The close (X) button hides the app to the
-tray; use the tray menu's Exit to quit. Tray menu actions run hidden and
-report back as a balloon tip - they do not open the window. State is read
+tray; use the tray menu's Exit to quit. Tray menu actions run silently in
+the background and do not open the window; the tray icon flips instead.
+State is read
 from the scheduler on open, on focus, after an action, and on Refresh Status -
 there is no background polling. The window can be resized and maximized.
+If the window is small, the Edit Schedule and Log dialogs scroll their
+content instead of clipping.
 
-The tray icon is a plain shield: solid white shield = proxy OFF, the same
-shield with a small green badge = proxy ON. The tooltip says which it is.
+The tray icon is a white shield with a tick: plain = proxy OFF, and with
+a small green dot in the bottom-right corner while the proxy is ON. The
+tooltip says which it is.
 
 The scheduled task and the engine are NOT changed by the new window.
 

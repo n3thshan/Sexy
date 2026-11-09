@@ -231,20 +231,26 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. The window is resizable and
   maximizable; content scrolls.
-- **Layout:** window = two tappable tile buttons (PROXY / SCHEDULE, each a
-  state word + tap hint + Fluent icon ea18/e917), a hint line for the
-  turn-ON-blocked reason, Refresh/Edit/Log/Hide-to-tray, result InfoBar.
-  The tile tap calls the same engine action as the tray menu
-  (`On`/`Off`/`Resume`/`Pause`). Blocked proxy tile = `OTHER`/`OFF` with
-  reason; taps ignored.
-- **Tray icon:** `GeneratedIconSource` white Fluent shield glyph (ea18);
-  with proxy ON a RadialGradientBrush green dot bottom-right is composited
-  into the same icon (no file I/O — do NOT assign file-based BitmapImage to
-  IconSource: it loads lazily and the tray pipeline dies with 0xC000027B).
-  UpdateTrayIcon swaps the two icon sources on every status refresh.
-- **Tray actions run hidden** and report via balloon tip
-  (`TaskbarIcon.ShowNotification`); they never unhide the window.
-- Tray icon is repainted on every status refresh.
+- **Layout:** split panel — left column = two tappable tile buttons
+  (PROXY / SCHEDULE, icon + big state word + tap hint; proxy tile icon is a
+  shield with tick, drawn from layered FontIcons ea18 + e73E), right column =
+  status card (Server / v2rayN / Schedule / Right now / Paused / Next /
+  Last check) + 2x2 button grid (Refresh / Edit / Log / Hide). Tile tap calls
+  the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`). Blocked proxy
+  tile = `OTHER`/`OFF` with reason; taps ignored.
+- **Tray icon:** committed PNGs in `Assets/` — white shield+tick always,
+  with a small green badge dot bottom-right when proxy ON
+  (`tray-shield-on.png`). Loaded via `BitmapImage` from
+  `AppContext.BaseDirectory\Assets`. Note: a file-based BitmapImage crashed
+  the icon pipeline once before (0xC000027B); if it recurs, revert to
+  GeneratedIconSource shield-only and investigate.
+- **Tray actions run hidden and silent** — no balloons, no opening the
+  window. The tray icon flips instead. Result feedback is the in-window
+  InfoBar when the window is open.
+- Tray icon is repainted on every status refresh (IconSource swap).
+- **Dialogs scroll:** both Edit Schedule and the Log dialog wrap their
+  content in a ScrollViewer with MaxHeight derived from the window height,
+  so a short window no longer clips them.
 - DPI awareness is set at runtime in `App` (P/Invoke
   `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`) before any window is
   created. Do NOT add an `app.manifest`/`ApplicationManifest`: the MSIX

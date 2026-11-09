@@ -22,113 +22,189 @@
         <!-- Content -->
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="12" MaxWidth="520" Margin="20,10,20,18" VerticalAlignment="Top">
+            <StackPanel Spacing="12" Margin="18,8,18,16" VerticalAlignment="Top">
 
-                <!-- Tiles: one per thing, each is a button -->
-                <Grid ColumnSpacing="12">
+                <!-- Split: tiles left, status card right -->
+                <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Button x:Name="ProxyTile"
-                            CornerRadius="10"
-                            Padding="10,16"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Click="ProxyTile_Click"
-                            AutomationProperties.Name="Toggle proxy">
-                        <StackPanel HorizontalAlignment="Center" Spacing="4">
-                            <FontIcon x:Name="ProxyIcon"
-                                      Glyph="&#xEA18;"
-                                      FontFamily="Segoe Fluent Icons"
-                                      FontSize="30"
-                                      Foreground="#A0A0A0" />
-                            <TextBlock Text="PROXY"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       CharacterSpacing="120"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock x:Name="ProxyWord"
-                                       Text="OFF"
-                                       FontSize="24"
-                                       FontWeight="Bold"
-                                       Foreground="#A0A0A0"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock x:Name="ProxySub"
-                                       Text="tap to turn ON"
-                                       FontSize="10"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Left column: the two tappable tiles -->
+                    <StackPanel Grid.Column="0" Spacing="12">
+                        <Button x:Name="ProxyTile"
+                                CornerRadius="10"
+                                Padding="12,14"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Click="ProxyTile_Click"
+                                AutomationProperties.Name="Toggle proxy">
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <Grid Width="34" Height="34" HorizontalAlignment="Center">
+                                    <FontIcon x:Name="ProxyIcon"
+                                              Glyph="&#xEA18;"
+                                              FontFamily="Segoe Fluent Icons"
+                                              FontSize="32"
+                                              Foreground="#A0A0A0" />
+                                    <FontIcon Glyph="&#xE73E;"
+                                              FontFamily="Segoe Fluent Icons"
+                                              FontSize="15"
+                                              Foreground="#F5F5F5"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="0,5,0,0" />
+                                </Grid>
+                                <TextBlock Text="PROXY"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           CharacterSpacing="140"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="ProxyWord"
+                                           Text="OFF"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="#A0A0A0"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="ProxySub"
+                                           Text="tap to turn ON"
+                                           FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
 
-                    <Button x:Name="ScheduleTile"
-                            Grid.Column="1"
+                        <Button x:Name="ScheduleTile"
+                                CornerRadius="10"
+                                Padding="12,14"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Click="ScheduleTile_Click"
+                                AutomationProperties.Name="Toggle schedule">
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <FontIcon x:Name="SchedIcon"
+                                          Glyph="&#xE917;"
+                                          FontFamily="Segoe Fluent Icons"
+                                          FontSize="32"
+                                          Foreground="#FFC94D" />
+                                <TextBlock Text="SCHEDULE"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           CharacterSpacing="140"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="SchedWord"
+                                           Text="PAUSED"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="#FFC94D"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="SchedSub"
+                                           Text="tap to resume"
+                                           FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Why the proxy tile is blocked, when it is -->
+                        <TextBlock x:Name="HintText"
+                                   Foreground="#FF99A4"
+                                   Visibility="Collapsed"
+                                   TextWrapping="WrapWholeWords"
+                                   FontSize="11" />
+                    </StackPanel>
+
+                    <!-- Right column: status card -->
+                    <Border Grid.Column="1"
+                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
                             CornerRadius="10"
-                            Padding="10,16"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Click="ScheduleTile_Click"
-                            AutomationProperties.Name="Toggle schedule">
-                        <StackPanel HorizontalAlignment="Center" Spacing="4">
-                            <FontIcon x:Name="SchedIcon"
-                                      Glyph="&#xE917;"
-                                      FontFamily="Segoe Fluent Icons"
-                                      FontSize="30"
-                                      Foreground="#FFC94D" />
-                            <TextBlock Text="SCHEDULE"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       CharacterSpacing="120"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock x:Name="SchedWord"
-                                       Text="PAUSED"
-                                       FontSize="24"
-                                       FontWeight="Bold"
-                                       Foreground="#FFC94D"
-                                       HorizontalAlignment="Center" />
-                            <TextBlock x:Name="SchedSub"
-                                       Text="tap to resume"
-                                       FontSize="10"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center" />
+                            Padding="14,12">
+                        <StackPanel Spacing="6">
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Server" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueServer" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="v2rayN" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValuePort" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Schedule" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueSchedule" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Right now" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueNow" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Paused" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValuePaused" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Next" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueNext" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Last check" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueLastRun" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Button x:Name="RefreshButton" Content="Refresh" Click="RefreshButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="EditButton" Grid.Column="1" Content="Edit..." Click="EditButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="LogButton" Grid.Row="1" Content="Log..." Click="LogButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="HideToTrayButton" Grid.Row="1" Grid.Column="1" Content="Hide" Click="HideToTrayButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                            </Grid>
                         </StackPanel>
-                    </Button>
+                    </Border>
                 </Grid>
-
-                <!-- Why the proxy tile is blocked, when it is -->
-                <TextBlock x:Name="HintText"
-                           Foreground="#FF99A4"
-                           Visibility="Collapsed"
-                           TextWrapping="WrapWholeWords"
-                           FontSize="12" />
 
                 <!-- Result banner -->
                 <InfoBar x:Name="ResultBar"
                          IsOpen="False"
                          IsClosable="True"
                          Severity="Informational" />
-
-                <!-- Secondary actions -->
-                <Grid ColumnSpacing="8" RowSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <Button x:Name="RefreshButton" Content="Refresh Status" Click="RefreshButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                    <Button x:Name="EditButton" Grid.Column="1" Content="Edit Schedule..." Click="EditButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-
-                    <Button x:Name="LogButton" Grid.Row="1" Content="Open Log..." Click="LogButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                    <Button x:Name="HideToTrayButton" Grid.Row="1" Grid.Column="1" Content="Hide to tray" Click="HideToTrayButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-                </Grid>
 
                 <!-- Footer -->
                 <TextBlock Text="Runs at 00:00, 07:00 and every 5 minutes. Manual ON/OFF pauses the schedule; use the schedule tile to hand control back."
