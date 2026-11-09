@@ -12,8 +12,10 @@ public partial class App : Application
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
-    private MainWindow? m_window;
+    private MainWindow? _window;
+    // Kept as a static field so the mutex stays held for the process lifetime.
     private static Mutex? s_mutex;
+    private static EventWaitHandle? s_showEvent;
 
     public App()
     {
@@ -27,8 +29,8 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Single instance: a second launch exits quietly. The app lives in
-        // the system tray; the shield is the whole interface.
+        // Single instance: a second launch signals the running instance to
+        // raise its window, then exits quietly.
         s_mutex = new Mutex(false, @"Local\SexyWinUI");
         bool have;
         try
@@ -43,14 +45,56 @@ public partial class App : Application
 
         if (!have)
         {
+            // Already running (e.g. hidden in the tray after a logon start).
+            // Ask the running instance to bring its window up, then exit.
+            try
+            {
+                if (EventWaitHandle.OpenExisting(@"Local\SexyShowWindow") is { } show)
+                {
+                    show.Set();
+                    show.Dispose();
+                }
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                // The running instance is mid-shutdown; nothing to signal.
+            }
+
             Environment.Exit(0);
             return;
         }
 
-        // Activate the host and LEAVE IT visible (borderless 1x1 speck).
-        // The popup the library opens on left-click cannot activate against
-        // a hidden owner window - that is the 0xC000027B in CoreMessagingXP.
-        m_window = new MainWindow();
-        m_window.Activate();
+        // Create the window first, then listen for "show yourself" from later launches.
+        _window = new MainWindow();
+        var queue = _window.DispatcherQueue;
+        s_showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\SexyShowWindow");
+        var showThread = new Thread(() =>
+        {
+            while (true)
+            {
+                s_showEvent.WaitOne();
+                queue?.TryEnqueue(() => _window?.ShowFromTray());
+            }
+        })
+        {
+            IsBackground = true
+        };
+        showThread.Start();
+
+        bool startInTray = Environment.GetCommandLineArgs()
+            .Any(a => a.Equals("--tray", StringComparison.OrdinalIgnoreCase));
+
+        if (startInTray)
+        {
+            // Launched by the "Start with Windows" entry: no window, just the
+            // tray. Activate first so Loaded fires (H.NotifyIcon creates the
+            // tray icon in Loaded), then hide immediately - one frame flash.
+            _window.Activate();
+            _window.HideToTray();
+        }
+        else
+        {
+            _window.Activate();
+        }
     }
 }

@@ -35,14 +35,14 @@ Hard constraints of the design:
 
 `SexyToggle.dll` and `SexyLauncher.exe` are **committed build artifacts**
 (there is no `.csproj`). Rebuild them whenever their `.cs` source changes —
-see Build. The `1` suffix on the UI files is historical; keep it unless you are
-deliberately renaming (then update the shortcut and the task in the same step).
+see Build. The `1` suffix survives only in the window mutex
+(`Local\SexyControlGui1`); it is historical. Keep it.
 
 The **WinUI 3 port** lives in `src/Sexy.WinUI/` (C#, .NET 8,
 Windows App SDK, unpackaged + self-contained). It is a modern Mica-styled
 replacement for `SexyControl.ps1`; the engine and task are unchanged.
-Built on demand by `.github/workflows/build-portable.yml` and distributed as a
-portable artifact.
+Built on push to `main`/`master` (and on demand) by
+`.github/workflows/build-portable.yml` and distributed as a portable artifact.
 
 ## How it flows
 
@@ -209,68 +209,83 @@ directory does **not** sandbox proxy changes. Simulate with `-DryRun` /
 
 ## The WinUI 3 port (`src/Sexy.WinUI/`)
 
-The app is **tray-only**. There is no main window: the tray shield opens a
-small panel (H.NotifyIcon `TrayPopup`), which is the entire interface. Only
-the engine changes the proxy - the UI is a *reader*.
+The window rewrite. Status contract and behavior rules are unchanged from the
+WinForms window — it must remain a *reader*: only the engine changes the proxy.
 
 | File | Role |
 | --- | --- |
-| `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 - do not upgrade without retargeting to net10). |
-| `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`), DPI awareness P/Invoke, app startup. |
-| `MainWindow.xaml` / `.cs` | Invisible 1x1 host window. H.NotifyIcon needs a visual tree + `Loaded` before it can create the native tray icon, so the app keeps an empty host window, activates it once and hides it. It hosts the `TaskbarIcon` (tray shield) and the `TrayPanel`. |
-| `TrayPanel.xaml` / `.cs` | The whole UI: two switch rows (PROXY / SCHEDULE, big state word + reason line), footer grid (Refresh / Edit Schedule... / Open Log... / Exit), and a "Start with Windows (to tray)" toggle row (reuses `StartupService`). |
+| `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 and only ships a net10.0 build — do not upgrade without retargeting to net10). |
+| `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`); a second launch signals the running instance (`Local\SexyShowWindow`) to show its window; `--tray` starts hidden to the tray; DPI PerMonitorV2 P/Invoke in the constructor. |
+| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar, split-panel tiles + status card, actions, tray icon. |
 | `EditScheduleDialog.xaml` / `.cs` | In-app editor for `settings.psd1`. |
-| `EngineService.cs` | Spawns `Sexy.ps1 -Action <x>`, parses `Key: value` Status lines, reads the log tail, Task Scheduler state via `TaskInfo.ps1`. Finds the engine via: `SEXY_ENGINE_DIR` env var -> exe folder -> up to 5 parent folders -> `C:\Users\Admin\Documents\Projects\v2rayN-proxy-schedule`. |
+| `EngineService.cs` | Spawns `Sexy.ps1 -Action <x>`, parses `Key: value` Status lines, reads the log tail, Task Scheduler state via `TaskInfo.ps1`. Finds the engine via: `SEXY_ENGINE_DIR` env var → exe folder → up to 5 parent folders → `C:\Users\Admin\Documents\Projects\v2rayN-proxy-schedule`. |
 | `SettingsService.cs` | Regex read/write of `settings.psd1` (writer keeps comments, backs up to `settings.psd1.bak` first). |
-| `StartupService.cs` | Reads/writes `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Sexy` = `"<exe path>" --tray` (per-user, no admin). |
-| `TaskInfo.ps1` | Read-only Task Scheduler query; shipped next to the exe. |
+| `TaskInfo.ps1` | Read-only Task Scheduler query (`LastRunTime/LastTaskResult/NumberOfMissedRuns/NextRunTime`); shipped next to the exe. |
+| `RelayCommand.cs` | Minimal `ICommand` for the tray popup menu (the Win32 popup menu calls commands, not Click handlers). |
+| `StartupService.cs` | "Start with Windows (to tray)" footer switch: reads/writes the per-user HKCU Run value `Sexy` = `"<exe path>" --tray`; `Heal()` rewrites the entry to the current exe path on launch when enabled; `IsEnabled()` only returns true for entries pointing at `Sexy.WinUI.exe`. |
+| `WindowState.cs` | Persists window position/size to `%LOCALAPPDATA%\Sexy\window.json`; load clamps the position to the work area and ignores sizes below 480x360; never throws. |
 
 Behavior notes:
 
-- **Engine resolution:** the portable exe never builds or modifies the engine.
-  On this machine it falls back to the original project folder, so the
-  scheduled task, the log and `settings.psd1` stay shared.
-- **The interface is the tray panel.** Left-click the shield to open it;
-  click it again (or click elsewhere) to close. The panel is a `TrayPopup`
-  owned by the `TaskbarIcon` (`PopupActivation = PopupActivationMode.LeftClick`),
-  anchored at the tray.
-- **Refresh model:** the panel refreshes on open (Loaded fires per open -
-  the popup is re-created), after any action it triggers, and on the Refresh
-  button. No timers, no background polling.
-- **Proxy/Schedule rows** mirror each other: big state word (ON green /
-  PAUSED amber / OFF grey / OTHER red), the switch, and a reason/detail
-  line. The proxy switch disables with the reason when another proxy is
-  set or v2rayN is not listening (the old `OTHER*`/`RequirePort` rules - do
-  not bypass).
-- **Tray icon:** `GeneratedIconSource`, text \uEA18 (Shield) in Segoe Fluent
-  Icons; near-white = off, tinted green = ON. File-based `BitmapImage`/PNG
-  tray icons crash the icon pipeline (0xC000027B in CoreMessagingXP.dll) -
-  never do it again.
-- **Dialogs scroll:** Edit Schedule and the Log dialog wrap their content
-  in a ScrollViewer so they fit smaller screens.
-- **Tray actions run hidden and silent** (tray menu + switches): no balloons,
-  no opening anything. Engine refusals surface on the HintText line inside
-  the panel and are cleared by the next refresh/action.
-- **No balloon notifications anywhere** (the old "always open the window" and
-  later "balloon result" designs are both gone).
-- **Start with Windows:** footer toggle writes the HKCU Run entry; the exe
-  ignores `--tray` (every start is tray-only). Deleting the exe removes the
-  need to clean up anything else.
+- **Engine resolution:** the portable exe never builds or modifies the engine. On
+  this machine it falls back to the original project folder, so the scheduled
+  task, the log and `settings.psd1` stay shared. Set `SEXY_ENGINE_DIR`
+  to point elsewhere.
+- **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
+  Left-click on the tray toggles the window. The window is resizable and
+  maximizable; content scrolls.
+- **Layout:** split panel — left column = two tappable tiles in a Grid with
+  `*` rows (tiles stretch to equal height), right column = status card
+  (Server / v2rayN / Schedule / Right now / Paused / Next / Last check)
+  + 2x2 button grid (Refresh / Edit / Log / Hide); same height guaranteed by
+  the grid. Tiles are PROXY / SCHEDULE: icon + big state word + tap hint;
+  proxy tile icon is a plain Fluent shield glyph (`FontIcon` ea18) — no
+  tick overlay. Tile tap calls the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`).
+  Blocked proxy tile = `OTHER`/`OFF` with reason; taps ignored.
+- **Tray icon:** `GeneratedIconSource`, text `\uEA18` (Shield) in Segoe Fluent
+  Icons. Near-white = off; the same glyph tinted green = ON (green tint since
+  there is no proven badge/dot path). File-based `BitmapImage`/PNG tray icons
+  crash the icon pipeline (0xC000027B in CoreMessagingXP.dll) — never do it again.
+- **Tray actions run hidden and silent** — no balloons, no opening the
+  window. The tray icon flips instead. Result feedback is the in-window
+  HintText line when the window is open.
+- **No result InfoBar:** hard errors surface via the HintText line and the
+  tile states; there is no banner.
+- **Window size persisted** to `%LOCALAPPDATA%\Sexy\window.json`
+  (saved on resize/move via the `AppWindow.Changed` event; on load the
+  position is clamped to the work area and sizes below 480x360 are ignored —
+  see `WindowState.cs`).
+- **"Start with Windows (to tray)" footer toggle** writes
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Sexy` =
+  `"<exe path>" --tray` via `StartupService.cs`; `--tray` launch starts the
+  app with the window hidden. `Heal()` rewrites the entry to the current exe
+  path on every launch when it is set (survives moves/updates).
+- Tray icon is repainted on every status refresh (IconSource swap).
+- **Dialogs scroll:** both Edit Schedule and the Log dialog wrap their
+  content in a ScrollViewer with MaxHeight derived from the window height,
+  so a short window no longer clips them.
 - DPI awareness is set at runtime in `App` (P/Invoke
   `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`) before any window is
   created. Do NOT add an `app.manifest`/`ApplicationManifest`: the MSIX
   tooling owns the embedded manifest and mangles merged ones, producing the
-  "side-by-side configuration is incorrect" startup error. `EnableMsixTooling=true`
-  stays (it fixes the published-exe startup crash 0xC000027B in
-  Microsoft.UI.Xaml.dll).
+  "side-by-side configuration is incorrect" startup error.
+  `EnableMsixTooling=true` stays (it fixes the published-exe startup crash
+  0xC000027B in Microsoft.UI.Xaml.dll).
+- **Refresh model is the same as the old window:** on `Loaded` and on
+  `Activated` (focus refresh max once per 5 s), after any action, and on
+  the Refresh button. No timers, no background polling.
+- **"Turn ON" availability** follows the exact same rules as before
+  (`OTHER*` proxy, or the v2rayN port not listening or not reported →
+  disabled with a red hint).
 - Tray icons need `H.NotifyIcon.WinUI`; the Win32 popup menu calls `ICommand`s
   attached to `MenuFlyoutItem`s, never `Click` handlers.
 - The build happens in GitHub Actions (`.github/workflows/build-portable.yml`):
   `windows-latest`, .NET 8 SDK, `dotnet publish -r win-x64 --self-contained`,
   output uploaded as the `Sexy-portable` artifact.
 - The exe is **unsigned**; Windows SmartScreen may warn on first run.
-- This machine is the build machine only for CI - the app itself is developed
+- This machine is the build machine only for CI — the app itself is developed
   against the live engine. Keep all engine calls read-only during testing.
+
 ## Known rough edges
 
 These are pre-existing; fix only if asked, and mention them rather than

@@ -5,9 +5,221 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Sexy">
 
-    <!-- Invisible host. H.NotifyIcon needs a visual tree and a Loaded event
-         to create the native tray icon, so the app keeps an empty window
-         that never activates a visible UI. The whole interface lives in
-         the tray panel (left-click the shield). -->
-    <Grid x:Name="RootGrid" Background="Transparent" />
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar (transparent so Mica shows through) -->
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="Transparent" Padding="16,0,0,0">
+            <TextBlock Text="Sexy"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12" Margin="18,8,18,16" VerticalAlignment="Top">
+
+                <!-- Split: tiles left, status card right -->
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left column: the two tappable tiles (stretch to fill the row) -->
+                    <Grid Grid.Column="0" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Button x:Name="ProxyTile"
+                                Grid.Row="0"
+                                CornerRadius="10"
+                                Padding="12,14"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Click="ProxyTile_Click"
+                                AutomationProperties.Name="Toggle proxy">
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <FontIcon x:Name="ProxyIcon"
+                                          Glyph="&#xEA18;"
+                                          FontFamily="Segoe Fluent Icons"
+                                          FontSize="30"
+                                          Foreground="#A0A0A0" />
+                                <TextBlock Text="PROXY"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           CharacterSpacing="140"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="ProxyWord"
+                                           Text="OFF"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="#A0A0A0"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="ProxySub"
+                                           Text="tap to turn ON"
+                                           FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ScheduleTile"
+                                Grid.Row="1"
+                                CornerRadius="10"
+                                Padding="12,14"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Click="ScheduleTile_Click"
+                                AutomationProperties.Name="Toggle schedule">
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <FontIcon x:Name="SchedIcon"
+                                          Glyph="&#xE917;"
+                                          FontFamily="Segoe Fluent Icons"
+                                          FontSize="32"
+                                          Foreground="#FFC94D" />
+                                <TextBlock Text="SCHEDULE"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           CharacterSpacing="140"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="SchedWord"
+                                           Text="PAUSED"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="#FFC94D"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock x:Name="SchedSub"
+                                           Text="tap to resume"
+                                           FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Why the proxy tile is blocked, when it is -->
+                        <TextBlock x:Name="HintText"
+                                   Grid.Row="2"
+                                   Foreground="#FF99A4"
+                                   Visibility="Collapsed"
+                                   TextWrapping="WrapWholeWords"
+                                   FontSize="11" />
+                    </Grid>
+
+                    <!-- Right column: status card -->
+                    <Border Grid.Column="1"
+                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="14,12">
+                        <StackPanel Spacing="6">
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Server" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueServer" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="v2rayN" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValuePort" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Schedule" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueSchedule" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Right now" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueNow" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Paused" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValuePaused" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Next" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueNext" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+                            <Grid Padding="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Last check" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ValueLastRun" Grid.Column="1" Text="-" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <Grid ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Button x:Name="RefreshButton" Content="Refresh" Click="RefreshButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="EditButton" Grid.Column="1" Content="Edit..." Click="EditButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="LogButton" Grid.Row="1" Content="Log..." Click="LogButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                                <Button x:Name="HideToTrayButton" Grid.Row="1" Grid.Column="1" Content="Hide" Click="HideToTrayButton_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="12" Padding="6,7"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Footer: start with Windows (to tray) -->
+                <Grid VerticalAlignment="Center" ColumnSpacing="12" Margin="2,0,2,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Start with Windows (to tray)"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ToggleSwitch x:Name="StartupSwitch"
+                                  Grid.Column="1"
+                                  OnContent=""
+                                  OffContent=""
+                                  Toggled="StartupSwitch_Toggled" />
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </Window>

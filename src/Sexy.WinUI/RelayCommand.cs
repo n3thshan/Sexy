@@ -12,7 +12,13 @@ public sealed class RelayCommand : ICommand
         _execute = execute;
     }
 
-    public event EventHandler? CanExecuteChanged;
+    // Never raised (the tray menu has no per-item CanExecute state) - the empty
+    // accessors silence CS0067, per the usual ICommand implementation pattern.
+    public event EventHandler? CanExecuteChanged
+    {
+        add { }
+        remove { }
+    }
 
     public bool CanExecute(object? parameter) => true;
 
