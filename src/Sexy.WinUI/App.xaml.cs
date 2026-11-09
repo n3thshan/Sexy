@@ -47,10 +47,10 @@ public partial class App : Application
             return;
         }
 
+        // Activate the host and LEAVE IT visible (borderless 1x1 speck).
+        // The popup the library opens on left-click cannot activate against
+        // a hidden owner window - that is the 0xC000027B in CoreMessagingXP.
         m_window = new MainWindow();
-        // Activate once so the window's visual tree loads and the tray icon
-        // is created, then hide it: the app lives in the tray from here on.
         m_window.Activate();
-        m_window.HideToTray();
     }
 }
