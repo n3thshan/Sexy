@@ -216,13 +216,13 @@ WinForms window — it must remain a *reader*: only the engine changes the proxy
 | --- | --- |
 | `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 and only ships a net10.0 build — do not upgrade without retargeting to net10). |
 | `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`); a second launch signals the running instance (`Local\SexyShowWindow`) to show its window; `--tray` starts hidden to the tray; DPI PerMonitorV2 P/Invoke in the constructor. |
-| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, official-Settings-style cloned layout (back arrow + breadcrumb, PROXY/SCHEDULE/APP sections, icons left, controls far-right), switches for Proxy/Schedule/Start-with-Windows, chevron nav rows, tray icon. |
+| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, official-Settings-style cloned layout (title bar caption + breadcrumb, PROXY/SCHEDULE/APP sections, icons left, controls far-right), switches for Proxy/Schedule/Start-with-Windows, chevron nav rows, tray icon. |
 | `EditScheduleDialog.xaml` / `.cs` | In-app editor for `settings.psd1`. |
 | `EngineService.cs` | Spawns `Sexy.ps1 -Action <x>`, parses `Key: value` Status lines, reads the log tail, Task Scheduler state via `TaskInfo.ps1`. Finds the engine via: `SEXY_ENGINE_DIR` env var → exe folder → up to 5 parent folders → `C:\Users\Admin\Documents\Projects\v2rayN-proxy-schedule`. |
 | `SettingsService.cs` | Regex read/write of `settings.psd1` (writer keeps comments, backs up to `settings.psd1.bak` first). |
 | `TaskInfo.ps1` | Read-only Task Scheduler query (`LastRunTime/LastTaskResult/NumberOfMissedRuns/NextRunTime`); shipped next to the exe. |
 | `RelayCommand.cs` | Minimal `ICommand` for the tray popup menu (the Win32 popup menu calls commands, not Click handlers). |
-| `StartupService.cs` | "Start with Windows" toggle (bottom of the left column): reads/writes the per-user HKCU Run value `Sexy` = `"<exe path>" --tray`; `Heal()` rewrites the entry to the current exe path on launch when enabled; `IsEnabled()` only returns true for entries pointing at `Sexy.WinUI.exe`. |
+| `StartupService.cs` | "Start with Windows" toggle (APP section): reads/writes the per-user HKCU Run value `Sexy` = `"<exe path>" --tray`; `Heal()` rewrites the entry to the current exe path on launch when enabled; `IsEnabled()` only returns true for entries pointing at `Sexy.WinUI.exe`. |
 | `WindowState.cs` | Persists window position/size to `%LOCALAPPDATA%\Sexy\window.json`; load clamps the position to the work area and ignores sizes below 480x360; never throws. |
 
 Behavior notes:
@@ -234,19 +234,15 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. The window is resizable and
   maximizable; content scrolls.
-- **Layout (B — official clones):** Mica backdrop; top-left back arrow +
-  breadcrumb "Sexy > Proxy"; big heading "Sexy Proxy"; three sections
-  PROXY / SCHEDULE / APP, one card each with a Fluent icon on the left and
-  the control pushed to the far right (On/Off label + switch, or chevron
-  for navigation rows). No colored text anywhere (everything theme default
-  or secondary brush); descriptions are single-line wrap. PROXY = Proxy
-  (shield icon, switch) + Refresh status (reload glyph, last-check line,
-  chevron, whole row is a button). SCHEDULE = Schedule (clock icon,
-  switch) + Change schedule (calendar icon, chevron). APP = Start with
-  Windows (startup.png image icon, switch) + Open log (document icon,
-  chevron) + Hide to tray (hide icon, chevron). Blocked proxy switch is
-  disabled; reason shown in the description. Startup switch/Heal and the
-  blocked-proxy rules are unchanged.
+- **Layout:** official-Settings-cloned Mica window; title bar is just the
+  "Sexy Proxy" caption; breadcrumb "Sexy > Proxy" + heading + sections
+  PROXY / SCHEDULE / APP, cards with Fluent icon on the left and control
+  stuck to the far right (On/Off label+switch, or chevron rows), full
+  width stretches with the window. APP = Start with Windows (four-squares
+  GridView glyph `\uF0E2`, switch) + Open log (document glyph `\uE8A5`, chevron).
+  No colored text anywhere. Blocked proxy switch is disabled with a grey
+  reason line; X hides to tray (the Hide to tray row was removed by user
+  request).
 - **Tray icon:** `GeneratedIconSource`, text `\uEA18` (Shield) in Segoe Fluent
   Icons. Near-white = off; the same glyph tinted green = ON (green tint since
   there is no proven badge/dot path). File-based `BitmapImage`/PNG tray icons
@@ -260,7 +256,7 @@ Behavior notes:
   (saved on resize/move via the `AppWindow.Changed` event; on load the
   position is clamped to the work area and sizes below 480x360 are ignored —
   see `WindowState.cs`).
-- **"Start with Windows" toggle** (bottom of the left column) writes
+- **"Start with Windows" toggle** (APP section) writes
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Sexy` =
   `"<exe path>" --tray` via `StartupService.cs`; `--tray` launch starts the
   app with the window hidden. `Heal()` rewrites the entry to the current exe

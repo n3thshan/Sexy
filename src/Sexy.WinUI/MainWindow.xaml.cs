@@ -1,11 +1,9 @@
 using Windows.UI;
-using System.IO;
 using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 
 namespace Sexy;
@@ -85,31 +83,12 @@ public sealed partial class MainWindow : Window
         StartupService.Heal();
         StartupOnOff.Text = StartupSwitch.IsOn ? "On" : "Off";
 
-        LoadStartupIcon();
-
         AppWindow.Closing += OnAppWindowClosing;
         Activated += OnWindowActivated;
 
         CreateTrayIcon();
 
         RootGrid.Loaded += async (_, _) => await UpdateStatusAsync();
-    }
-
-    // The icon PNG ships next to the exe and is loaded lazily from disk.
-    private void LoadStartupIcon()
-    {
-        try
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "Assets", "startup.png");
-            if (File.Exists(path))
-            {
-                StartupIcon.Source = new BitmapImage(new Uri(path));
-            }
-        }
-        catch
-        {
-            // The icon is decorative; skip it silently if it fails to load.
-        }
     }
 
     // ---------------------------------------------------------------------
@@ -248,7 +227,6 @@ public sealed partial class MainWindow : Window
         EditButton.IsEnabled = enabled;
         LogButton.IsEnabled = enabled;
         RefreshButton.IsEnabled = enabled;
-        HideToTrayButton.IsEnabled = enabled;
         SchedSwitch.IsEnabled = enabled;
         ProxySwitch.IsEnabled = enabled && (_isProxyOn || _canTurnOn);
     }
@@ -485,11 +463,7 @@ public sealed partial class MainWindow : Window
         StartupOnOff.Text = StartupSwitch.IsOn ? "On" : "Off";
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e) => AppWindow.Hide();
-
     public void HideToTray() => AppWindow.Hide();
-
-    private void HideToTrayButton_Click(object sender, RoutedEventArgs e) => AppWindow.Hide();
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {

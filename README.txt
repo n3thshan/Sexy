@@ -99,12 +99,13 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window looks like the real Windows Settings pages: a back arrow and
-the breadcrumb "Sexy > Proxy" at the top, a "Sexy Proxy" heading, then
+The window looks like the real Windows Settings pages: "Sexy Proxy" in the
+title bar, the breadcrumb "Sexy > Proxy" and a "Sexy Proxy" heading, then
 three sections - PROXY, SCHEDULE, APP - with rows in cards. Each row has
 a Fluent icon on the left, a title with a grey description, and a control
 pushed to the far right edge (On/Off label next to a switch, or a
 chevron). Toggles read On/Off; text is one color with grey descriptions.
+The whole layout stretches with the window.
 
 PROXY
   Proxy              - switch, with server and port in the description
@@ -117,9 +118,9 @@ SCHEDULE
   Change schedule    - chevron; opens the editor
 
 APP
-  Start with Windows - switch, launches hidden to the tray at logon
+  Start with Windows - switch, launches hidden to the tray (four-squares
+                       Windows-style icon)
   Open log           - chevron
-  Hide to tray       - chevron
 
 When another proxy is set up, or v2rayN is not listening, the proxy
 switch is disabled and the description says why (in the same grey).
