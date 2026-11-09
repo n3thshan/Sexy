@@ -238,12 +238,12 @@ Behavior notes:
   Last check) + 2x2 button grid (Refresh / Edit / Log / Hide). Tile tap calls
   the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`). Blocked proxy
   tile = `OTHER`/`OFF` with reason; taps ignored.
-- **Tray icon:** committed PNGs in `Assets/` — white shield+tick always,
-  with a small green badge dot bottom-right when proxy ON
-  (`tray-shield-on.png`). Loaded via `BitmapImage` from
-  `AppContext.BaseDirectory\Assets`. Note: a file-based BitmapImage crashed
-  the icon pipeline once before (0xC000027B); if it recurs, revert to
-  GeneratedIconSource shield-only and investigate.
+- **Tray icon:** `GeneratedIconSource`, text `\uEA18\uE73E` (Shield +
+  CheckMark) in Segoe Fluent Icons. OFF/err/other = near-white; ON = same
+  glyphs tinted green. File-based PNG/BitmapImage icons crash the native
+  pipeline (0xC000027B in CoreMessagingXP.dll) — do NOT go back to them.
+  The small green badge dot is not possible on this path; a badge would
+  need another rendering approach.
 - **Tray actions run hidden and silent** — no balloons, no opening the
   window. The tray icon flips instead. Result feedback is the in-window
   InfoBar when the window is open.

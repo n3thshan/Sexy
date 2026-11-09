@@ -115,9 +115,11 @@ there is no background polling. The window can be resized and maximized.
 If the window is small, the Edit Schedule and Log dialogs scroll their
 content instead of clipping.
 
-The tray icon is a white shield with a tick: plain = proxy OFF, and with
-a small green dot in the bottom-right corner while the proxy is ON. The
-tooltip says which it is.
+The tray icon is a glyph-pair drawn from the Fluent icons font: a shield
+with a tick. Plain white means the proxy is off; the same glyphs tinted
+green means the proxy is on. The tooltip says which it is. (A small green
+badge dot in the corner would be needed for the classic app-badge look;
+it is not possible on this tray library without crashing the app.)
 
 The scheduled task and the engine are NOT changed by the new window.
 

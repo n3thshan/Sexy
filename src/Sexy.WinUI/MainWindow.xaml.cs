@@ -1,12 +1,10 @@
 using System.Text.RegularExpressions;
-using System.IO;
 using Windows.UI;
 using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 
 namespace Sexy;
@@ -114,18 +112,30 @@ public sealed partial class MainWindow : Window
             ToolTipText = "Sexy - v2rayN schedule",
             NoLeftClickDelay = true
         };
-        _tray.IconSource = TrayBitmap(proxyOn: false);
+        _tray.IconSource = TrayIcon(proxyOn: false);
         _tray.ContextFlyout = menu;
         _tray.LeftClickCommand = new RelayCommand(ToggleWindowFromTray);
 
         RootGrid.Children.Add(_tray);
     }
 
-    private static BitmapImage TrayBitmap(bool proxyOn)
+    // Shield with a tick, drawn synchronously - this is the only tray
+    // rendering path that does not crash the native icon pipeline. A file
+    // based BitmapImage made the app die on launch (0xC000027B in
+    // CoreMessagingXP.dll), so the glyph pair is used and the ON state is
+    // shown as the same glyphs tinted green.
+    private static GeneratedIconSource TrayIcon(bool proxyOn)
     {
-        var name = proxyOn ? "tray-shield-on.png" : "tray-shield.png";
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
-        return new BitmapImage(new Uri(path, UriKind.Absolute));
+        return new GeneratedIconSource
+        {
+            Text = "\uEA18\uE73E", // Shield + CheckMark
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 36,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = new SolidColorBrush(proxyOn
+                ? Color.FromArgb(255, 108, 203, 95)
+                : Color.FromArgb(255, 245, 245, 245))
+        };
     }
 
     private void UpdateTrayIcon(string stateUpper)
@@ -133,7 +143,7 @@ public sealed partial class MainWindow : Window
         if (_tray is null) return;
 
         bool proxyOn = stateUpper.StartsWith("ON", StringComparison.Ordinal);
-        _tray.IconSource = TrayBitmap(proxyOn);
+        _tray.IconSource = TrayIcon(proxyOn);
         _tray.ToolTipText = stateUpper.StartsWith("ON", StringComparison.Ordinal)
             ? "Sexy - Proxy ON"
             : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)
