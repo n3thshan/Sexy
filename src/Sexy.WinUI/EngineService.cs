@@ -221,14 +221,19 @@ public sealed class EngineService
             _ => $"0x{(uint)(rawCode & 0xFFFFFFFFL):X8}"
         };
 
-        var text = $"{lastRunText} - {resultText}";
-
-        if (DateTime.TryParseExact(
+        DateTime lastRun = default;
+        bool hasLastRun = DateTime.TryParseExact(
                 lastRunText,
                 "yyyy-MM-dd HH:mm",
                 System.Globalization.CultureInfo.InvariantCulture,
                 System.Globalization.DateTimeStyles.None,
-                out var lastRun))
+                out lastRun);
+
+        var text = hasLastRun
+            ? $"{lastRun:yyyy-MM-dd h:mm tt} - {resultText}"
+            : $"{lastRunText} - {resultText}";
+
+        if (hasLastRun)
         {
             text += $" ({FormatAgo(lastRun)})";
         }

@@ -26,8 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Queries Task Scheduler for the "Last check" row. Copied next to the exe. -->
+    <!-- Queries Task Scheduler for the "Refresh status" row. Copied next to the exe. -->
     <None Include="TaskInfo.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Start with Windows row icon. Copied next to the exe. -->
+    <None Include="Assets\startup.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

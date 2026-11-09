@@ -1,21 +1,17 @@
 using Windows.UI;
+using System.IO;
 using H.NotifyIcon;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 
 namespace Sexy;
 
 public sealed partial class MainWindow : Window
 {
-    // Tile word / icon colors (light variants read well on the dark theme).
-    private static readonly Brush WordGreen = new SolidColorBrush(Color.FromArgb(255, 108, 203, 95));
-    private static readonly Brush WordAmber = new SolidColorBrush(Color.FromArgb(255, 255, 201, 77));
-    private static readonly Brush WordRed = new SolidColorBrush(Color.FromArgb(255, 255, 153, 164));
-    private static readonly Brush WordGrey = new SolidColorBrush(Color.FromArgb(255, 160, 160, 160));
-
     private readonly EngineService _engine = new();
     private TaskbarIcon? _tray;
 
@@ -67,11 +63,11 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            AppWindow.Resize(new SizeInt32(400, 580));
+            AppWindow.Resize(new SizeInt32(440, 720));
 
             var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
-            var posX = area.WorkArea.X + (area.WorkArea.Width - 400) / 2;
-            var posY = area.WorkArea.Y + (area.WorkArea.Height - 580) / 2;
+            var posX = area.WorkArea.X + (area.WorkArea.Width - 440) / 2;
+            var posY = area.WorkArea.Y + (area.WorkArea.Height - 720) / 2;
             AppWindow.Move(new PointInt32(posX, posY));
         }
 
@@ -87,6 +83,9 @@ public sealed partial class MainWindow : Window
         StartupSwitch.IsOn = StartupService.IsEnabled();
         _suppressStartupToggle = false;
         StartupService.Heal();
+        StartupOnOff.Text = StartupSwitch.IsOn ? "On" : "Off";
+
+        LoadStartupIcon();
 
         AppWindow.Closing += OnAppWindowClosing;
         Activated += OnWindowActivated;
@@ -94,6 +93,23 @@ public sealed partial class MainWindow : Window
         CreateTrayIcon();
 
         RootGrid.Loaded += async (_, _) => await UpdateStatusAsync();
+    }
+
+    // The icon PNG ships next to the exe and is loaded lazily from disk.
+    private void LoadStartupIcon()
+    {
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "Assets", "startup.png");
+            if (File.Exists(path))
+            {
+                StartupIcon.Source = new BitmapImage(new Uri(path));
+            }
+        }
+        catch
+        {
+            // The icon is decorative; skip it silently if it fails to load.
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -237,12 +253,10 @@ public sealed partial class MainWindow : Window
         ProxySwitch.IsEnabled = enabled && (_isProxyOn || _canTurnOn);
     }
 
-    private void SetProxyRow(bool canAct, string word, Brush wordBrush, string sub)
+    private void SetProxyRow(bool canAct, string word, string sub)
     {
-        ProxyWord.Text = word;
-        ProxyWord.Foreground = wordBrush;
+        ProxyOnOff.Text = word;
         ProxySub.Text = sub;
-
         _suppressProxyToggle = true;
         ProxySwitch.IsOn = _isProxyOn;
         _suppressProxyToggle = false;
@@ -251,10 +265,9 @@ public sealed partial class MainWindow : Window
         ProxySwitch.Opacity = canAct ? 1.0 : 0.5;
     }
 
-    private void SetSchedRow(string word, Brush wordBrush, string sub, string schedText)
+    private void SetSchedRow(string word, string sub, string schedText)
     {
-        SchedWord.Text = word;
-        SchedWord.Foreground = wordBrush;
+        SchedOnOff.Text = word;
         SchedSub.Text = sub;
         ScheduleSub.Text = schedText;
 
@@ -318,27 +331,27 @@ public sealed partial class MainWindow : Window
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable while another proxy is configured. Clear it first.";
-                SetProxyRow(false, "OTHER", WordRed, "another proxy is set");
+                SetProxyRow(false, "Off", "another proxy is set");
             }
             else if (string.IsNullOrWhiteSpace(Get("v2rayN port", string.Empty)))
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: the scheduler did not report the v2rayN port.";
-                SetProxyRow(false, "OFF", WordGrey, proxySub);
+                SetProxyRow(false, "Off", proxySub);
             }
             else if (!portListening)
             {
                 _canTurnOn = false;
                 hint = "Turn ON is unavailable: v2rayN is not listening, so the proxy would break your connection.";
-                SetProxyRow(false, "OFF", WordGrey, proxySub);
+                SetProxyRow(false, "Off", proxySub);
             }
             else if (_isProxyOn)
             {
-                SetProxyRow(true, "ON", WordGreen, proxySub);
+                SetProxyRow(true, "On", proxySub);
             }
             else
             {
-                SetProxyRow(true, "OFF", WordGrey, proxySub);
+                SetProxyRow(true, "Off", proxySub);
             }
 
             // ---------- Schedule tile ----------
@@ -346,15 +359,15 @@ public sealed partial class MainWindow : Window
             bool insideWindow = nowRaw.StartsWith("On", StringComparison.OrdinalIgnoreCase);
             if (_isPaused)
             {
-                SetSchedRow("PAUSED", WordAmber, "paused - tap to resume", schedHint + " - paused");
+                SetSchedRow("Off", "paused - tap to resume", schedHint + " - paused");
             }
             else if (insideWindow)
             {
-                SetSchedRow("ON", WordGreen, "inside the window - tap to pause", schedHint);
+                SetSchedRow("On", "inside the window - tap to pause", schedHint);
             }
             else
             {
-                SetSchedRow("OFF", WordGrey, "outside the schedule window", schedHint);
+                SetSchedRow("Off", "outside the schedule window", schedHint);
             }
 
             if (hint.Length > 0)
@@ -372,6 +385,15 @@ public sealed partial class MainWindow : Window
                 HintText.Visibility = Visibility.Collapsed;
             }
 
+            try
+            {
+                RefreshSub.Text = "Last check " + await _engine.GetScheduledTaskSummaryAsync();
+            }
+            catch
+            {
+                RefreshSub.Text = "last check unavailable";
+            }
+
             _lastRefresh = DateTime.Now;
         }
         catch (Exception ex)
@@ -381,8 +403,8 @@ public sealed partial class MainWindow : Window
             _isPaused = false;
 
             UpdateTrayIcon("ERROR");
-            SetProxyRow(false, "OFF", WordGrey, "status unavailable");
-            SetSchedRow("?", WordGrey, "status unavailable", "-");
+            SetProxyRow(false, "Off", "status unavailable");
+            SetSchedRow("Off", "status unavailable", "-");
 
             // Hard errors surface as a thin red line instead of a banner.
             HintText.Text = "Could not read status: " + ex.Message;
@@ -460,7 +482,10 @@ public sealed partial class MainWindow : Window
     {
         if (_suppressStartupToggle) return;
         StartupService.SetEnabled(StartupSwitch.IsOn);
+        StartupOnOff.Text = StartupSwitch.IsOn ? "On" : "Off";
     }
+
+    private void BackButton_Click(object sender, RoutedEventArgs e) => AppWindow.Hide();
 
     public void HideToTray() => AppWindow.Hide();
 

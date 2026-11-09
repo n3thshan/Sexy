@@ -99,26 +99,33 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window is a tall vertical list, titled "Sexy Proxy", styled like the
-Windows Settings pages. Each row shows a big state word with a switch (or a
-detail line with an arrow for the editor and the log):
+The window looks like the real Windows Settings pages: a back arrow and
+the breadcrumb "Sexy > Proxy" at the top, a "Sexy Proxy" heading, then
+three sections - PROXY, SCHEDULE, APP - with rows in cards. Each row has
+a Fluent icon on the left, a title with a grey description, and a control
+pushed to the far right edge (On/Off label next to a switch, or a
+chevron). Toggles read On/Off; text is one color with grey descriptions.
 
-  Proxy            - ON, OFF or OTHER, with a line showing server and port
-                     (e.g. "v2rayN listening on 127.0.0.1:10808")
-  Schedule         - ON, OFF or PAUSED, with the window in 12-hour format
-                     (e.g. "ON 7:00 AM-12:00 AM, every day")
-  Start with Windows - launch hidden to the tray at logon
-  Edit Schedule    - opens the schedule editor
-  Open Log         - opens the last 200 lines of the log
+PROXY
+  Proxy              - switch, with server and port in the description
+                       (e.g. "v2rayN listening on 127.0.0.1:10808")
+  Refresh status     - tap to re-read; description shows the last check
 
-Every row has its switch (or arrow) on the right. The proxy switch is
-disabled with the reason shown as a red line when another proxy is set
-up, or v2rayN is not listening. Refresh and Hide to tray are buttons at
-the bottom.
+SCHEDULE
+  Schedule           - switch, with the window in 12-hour format
+                       (e.g. "ON 7:00 AM-12:00 AM, every day")
+  Change schedule    - chevron; opens the editor
+
+APP
+  Start with Windows - switch, launches hidden to the tray at logon
+  Open log           - chevron
+  Hide to tray       - chevron
+
+When another proxy is set up, or v2rayN is not listening, the proxy
+switch is disabled and the description says why (in the same grey).
+Hard errors show as a thin grey line; there is no banner.
 The window remembers its size and position between launches (stored in
-%LOCALAPPDATA%\Sexy\window.json). The default size is 400x580.
-
-Hard errors show as a thin red line in the window; there is no banner.
+%LOCALAPPDATA%\Sexy\window.json). The default size is 440x720.
 The close (X) button hides to the tray; Exit on the tray menu quits.
 
 The tray icon is a white Fluent shield glyph (\uEA18) drawn with
