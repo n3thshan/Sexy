@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Windows.UI;
-using Windows.Foundation;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
 using Microsoft.UI.Windowing;
@@ -122,39 +121,24 @@ public sealed partial class MainWindow : Window
         RootGrid.Children.Add(_tray);
     }
 
-    // Plain white Fluent shield, or the same shield with a small green dot
-    // bottom-right when the proxy is ON. GeneratedIconSource draws
-    // synchronously, which the tray icon pipeline requires.
+    // Plain white Fluent shield, or a white shield on a solid green tile
+    // when the proxy is ON. GeneratedIconSource draws synchronously, which
+    // the tray icon pipeline requires. Note: use solid brush backgrounds
+    // only - a gradient/alpha background crashed the native icon pipeline
+    // (0xC000027B in CoreMessagingXP.dll).
     private static GeneratedIconSource TrayIcon(bool proxyOn)
     {
-        var icon = new GeneratedIconSource
+        return new GeneratedIconSource
         {
             Text = "\uEA18", // Shield
             FontFamily = new FontFamily("Segoe Fluent Icons"),
             FontSize = 44,
             FontWeight = FontWeights.Bold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 245, 245, 245))
+            Foreground = new SolidColorBrush(Color.FromArgb(255, 245, 245, 245)),
+            Background = new SolidColorBrush(proxyOn
+                ? Color.FromArgb(255, 16, 124, 16)
+                : Color.FromArgb(0, 0, 0, 0))
         };
-
-        if (proxyOn)
-        {
-            var badge = new RadialGradientBrush
-            {
-                Center = new Point(0.78, 0.76),
-                RadiusX = 0.21,
-                RadiusY = 0.21,
-                GradientStops =
-                {
-                    new GradientStop { Offset = 0.0, Color = Color.FromArgb(255, 16, 124, 16) },
-                    new GradientStop { Offset = 0.84, Color = Color.FromArgb(255, 16, 124, 16) },
-                    new GradientStop { Offset = 0.85, Color = Color.FromArgb(0, 16, 124, 16) },
-                    new GradientStop { Offset = 1.0, Color = Color.FromArgb(0, 16, 124, 16) }
-                }
-            };
-            icon.Background = badge;
-        }
-
-        return icon;
     }
 
     private void UpdateTrayIcon(string stateUpper)
