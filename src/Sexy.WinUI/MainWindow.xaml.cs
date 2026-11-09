@@ -24,7 +24,6 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        ExtendsContentIntoTitleBar = true;
         Title = "Sexy";
         AppWindow.Title = "Sexy";
         SystemBackdrop = new MicaBackdrop();
