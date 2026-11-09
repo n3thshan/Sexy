@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using H.NotifyIcon;
+using Windows.UI;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -155,7 +156,7 @@ public sealed partial class MainWindow : Window
         Application.Current.Exit();
     }
 
-    private void OnAppWindowClosing(AppWindow sender, ClosingEventArgs args)
+    private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_exiting) return;
 
