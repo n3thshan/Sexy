@@ -231,22 +231,29 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. The window is resizable and
   maximizable; content scrolls.
-- **Layout:** split panel — left column = two tappable tile buttons
-  (PROXY / SCHEDULE, icon + big state word + tap hint; proxy tile icon is a
-  shield with tick, drawn from layered FontIcons ea18 + e73E), right column =
-  status card (Server / v2rayN / Schedule / Right now / Paused / Next /
-  Last check) + 2x2 button grid (Refresh / Edit / Log / Hide). Tile tap calls
-  the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`). Blocked proxy
-  tile = `OTHER`/`OFF` with reason; taps ignored.
-- **Tray icon:** `GeneratedIconSource`, text `\uEA18\uE73E` (Shield +
-  CheckMark) in Segoe Fluent Icons. OFF/err/other = near-white; ON = same
-  glyphs tinted green. File-based PNG/BitmapImage icons crash the native
-  pipeline (0xC000027B in CoreMessagingXP.dll) — do NOT go back to them.
-  The small green badge dot is not possible on this path; a badge would
-  need another rendering approach.
+- **Layout:** split panel — left column = two tappable tiles in a Grid with
+  `*` rows (tiles stretch to equal height), right column = status card
+  (Server / v2rayN / Schedule / Right now / Paused / Next / Last check)
+  + 2x2 button grid (Refresh / Edit / Log / Hide); same height guaranteed by
+  the grid. Tiles are PROXY / SCHEDULE: icon + big state word + tap hint;
+  proxy tile icon is a plain Fluent shield glyph (`FontIcon` ea18) — no
+  tick overlay. Tile tap calls the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`).
+  Blocked proxy tile = `OTHER`/`OFF` with reason; taps ignored.
+- **Tray icon:** `GeneratedIconSource`, text `\uEA18` (Shield) in Segoe Fluent
+  Icons. Near-white = off; the same glyph tinted green = ON (green tint since
+  there is no proven badge/dot path). File-based `BitmapImage`/PNG tray icons
+  crash the icon pipeline (0xC000027B in CoreMessagingXP.dll) — never do it again.
 - **Tray actions run hidden and silent** — no balloons, no opening the
   window. The tray icon flips instead. Result feedback is the in-window
-  InfoBar when the window is open.
+  HintText line when the window is open.
+- **No result InfoBar:** hard errors surface via the HintText line and the
+  tile states; there is no banner.
+- **Window size persisted** to `%LOCALAPPDATA%\Sexy\window.json`
+  (AppWindow.Changed + on hide/close).
+- **"Start with Windows" footer toggle** writes
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Sexy` =
+  `"<exe path>" --tray` via `StartupService.cs`; `--tray` launch starts the
+  app with the window hidden.
 - Tray icon is repainted on every status refresh (IconSource swap).
 - **Dialogs scroll:** both Edit Schedule and the Log dialog wrap their
   content in a ScrollViewer with MaxHeight derived from the window height,

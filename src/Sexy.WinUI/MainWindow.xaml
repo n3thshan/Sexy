@@ -30,31 +30,33 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <!-- Left column: the two tappable tiles -->
-                    <StackPanel Grid.Column="0" Spacing="12">
+                    <!-- Left column: the two tappable tiles (stretch to fill the row) -->
+                    <Grid Grid.Column="0" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <Button x:Name="ProxyTile"
+                                Grid.Row="0"
                                 CornerRadius="10"
                                 Padding="12,14"
                                 HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
                                 HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
                                 Click="ProxyTile_Click"
                                 AutomationProperties.Name="Toggle proxy">
                             <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                <Grid Width="34" Height="34" HorizontalAlignment="Center">
-                                    <FontIcon x:Name="ProxyIcon"
-                                              Glyph="&#xEA18;"
-                                              FontFamily="Segoe Fluent Icons"
-                                              FontSize="32"
-                                              Foreground="#A0A0A0" />
-                                    <FontIcon Glyph="&#xE73E;"
-                                              FontFamily="Segoe Fluent Icons"
-                                              FontSize="15"
-                                              Foreground="#F5F5F5"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="0,5,0,0" />
-                                </Grid>
+                                <FontIcon x:Name="ProxyIcon"
+                                          Glyph="&#xEA18;"
+                                          FontFamily="Segoe Fluent Icons"
+                                          FontSize="30"
+                                          Foreground="#A0A0A0" />
                                 <TextBlock Text="PROXY"
                                            FontSize="10"
                                            FontWeight="SemiBold"
@@ -76,10 +78,13 @@
                         </Button>
 
                         <Button x:Name="ScheduleTile"
+                                Grid.Row="1"
                                 CornerRadius="10"
                                 Padding="12,14"
                                 HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
                                 HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
                                 Click="ScheduleTile_Click"
                                 AutomationProperties.Name="Toggle schedule">
                             <StackPanel HorizontalAlignment="Center" Spacing="4">
@@ -111,11 +116,12 @@
 
                         <!-- Why the proxy tile is blocked, when it is -->
                         <TextBlock x:Name="HintText"
+                                   Grid.Row="2"
                                    Foreground="#FF99A4"
                                    Visibility="Collapsed"
                                    TextWrapping="WrapWholeWords"
                                    FontSize="11" />
-                    </StackPanel>
+                    </Grid>
 
                     <!-- Right column: status card -->
                     <Border Grid.Column="1"
@@ -200,17 +206,22 @@
                     </Border>
                 </Grid>
 
-                <!-- Result banner -->
-                <InfoBar x:Name="ResultBar"
-                         IsOpen="False"
-                         IsClosable="True"
-                         Severity="Informational" />
-
-                <!-- Footer -->
-                <TextBlock Text="Runs at 00:00, 07:00 and every 5 minutes. Manual ON/OFF pauses the schedule; use the schedule tile to hand control back."
-                           TextWrapping="WrapWholeWords"
-                           FontSize="11"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <!-- Footer: start with Windows (to tray) -->
+                <Grid VerticalAlignment="Center" ColumnSpacing="12" Margin="2,0,2,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Start with Windows (to tray)"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ToggleSwitch x:Name="StartupSwitch"
+                                  Grid.Column="1"
+                                  OnContent=""
+                                  OffContent=""
+                                  Toggled="StartupSwitch_Toggled" />
+                </Grid>
             </StackPanel>
         </ScrollViewer>
     </Grid>

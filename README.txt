@@ -99,27 +99,39 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window has two tappable tiles on the left (the proxy tile shows the
-proxy state, the schedule tile shows the schedule state) - tap a tile to
-toggle that thing. On the right are the details (server, port, schedule,
-right now, paused, next change, last check) with Refresh, Edit..., Log...,
-Hide buttons underneath. When another proxy is set up, or v2rayN is not
-listening, the proxy tile turns red with the reason and ignores taps.
-"Edit Schedule" writes settings.psd1 in the same format as before (a
-settings.psd1.bak backup is kept). The close (X) button hides the app to the
-tray; use the tray menu's Exit to quit. Tray menu actions run silently in
-the background and do not open the window; the tray icon flips instead.
-State is read
-from the scheduler on open, on focus, after an action, and on Refresh Status -
-there is no background polling. The window can be resized and maximized.
-If the window is small, the Edit Schedule and Log dialogs scroll their
-content instead of clipping.
+The window is a split layout. The left column has two tappable tiles:
+PROXY shows the proxy state (ON, OFF or OTHER) and SCHEDULE shows the
+schedule state (ON or PAUSED). The right column is the status card
+(server, v2rayN port, schedule, right now, paused, next change, last
+check) with Refresh, Edit..., Log... and Hide buttons underneath. Both
+columns are the same height, and the two tiles stretch to fill the
+column.
 
-The tray icon is a glyph-pair drawn from the Fluent icons font: a shield
-with a tick. Plain white means the proxy is off; the same glyphs tinted
-green means the proxy is on. The tooltip says which it is. (A small green
-badge dot in the corner would be needed for the classic app-badge look;
-it is not possible on this tray library without crashing the app.)
+Tapping a tile toggles that thing. When another proxy is set up, or
+v2rayN is not listening, the proxy tile turns red with the reason and
+ignores taps.
+
+There is no result banner anymore. Hard errors show as a thin red line
+in the window.
+
+The window remembers its size between launches (stored in
+%LOCALAPPDATA%\Sexy\window.json). The default size is 740x520.
+
+There is a "Start with Windows (to tray)" switch in a footer row of the
+main window. When it is on, Sexy launches hidden to the tray at logon
+(the HKCU Run key, value "Sexy", command "<exe>" --tray). The close (X)
+button still hides to tray; Exit on the tray menu quits.
+
+The tray icon is a white Fluent shield glyph (\uEA18) drawn with
+GeneratedIconSource. The glyph is tinted green when the proxy is ON.
+There are no balloon notifications anywhere; tray actions are silent.
+
+"Edit Schedule" writes settings.psd1 in the same format as before (a
+settings.psd1.bak backup is kept). State is read from the scheduler
+on open, on focus, after an action, and on Refresh Status - there is no
+background polling. The window can be resized and maximized. If the
+window is small, the Edit Schedule and Open Log dialogs scroll their
+content instead of clipping.
 
 The scheduled task and the engine are NOT changed by the new window.
 

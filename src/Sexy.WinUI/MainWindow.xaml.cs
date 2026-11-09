@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Windows.UI;
 using H.NotifyIcon;
 using Microsoft.UI.Windowing;
@@ -22,11 +21,11 @@ public sealed partial class MainWindow : Window
 
     private bool _busy;
     private bool _refreshing;
+    private string? _lastActionError;
     private bool _exiting;
     private bool _canTurnOn = true;
     private bool _isProxyOn;
     private bool _isPaused;
-    private bool _lastError;
     private DateTime _lastRefresh = DateTime.MinValue;
 
     public MainWindow()
@@ -50,12 +49,39 @@ public sealed partial class MainWindow : Window
             presenter.IsMinimizable = true;
         }
 
-        AppWindow.Resize(new SizeInt32(740, 520));
+        var saved = WindowState.Load();
+        if (saved is not null && saved.Width >= 480 && saved.Height >= 360)
+        {
+            AppWindow.Resize(new SizeInt32(saved.Width, saved.Height));
 
-        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
-        var posX = area.WorkArea.X + (area.WorkArea.Width - 740) / 2;
-        var posY = area.WorkArea.Y + (area.WorkArea.Height - 520) / 2;
-        AppWindow.Move(new PointInt32(posX, posY));
+            // Restore the position, but keep the window on-screen.
+            var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+            var x = Math.Clamp(saved.X, area.WorkArea.X,
+                Math.Max(area.WorkArea.X, area.WorkArea.X + area.WorkArea.Width - saved.Width));
+            var y = Math.Clamp(saved.Y, area.WorkArea.Y,
+                Math.Max(area.WorkArea.Y, area.WorkArea.Y + area.WorkArea.Height - saved.Height));
+            AppWindow.Move(new PointInt32(x, y));
+        }
+        else
+        {
+            AppWindow.Resize(new SizeInt32(740, 520));
+
+            var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+            var posX = area.WorkArea.X + (area.WorkArea.Width - 740) / 2;
+            var posY = area.WorkArea.Y + (area.WorkArea.Height - 520) / 2;
+            AppWindow.Move(new PointInt32(posX, posY));
+        }
+
+        AppWindow.Changed += (s, args) =>
+        {
+            if (args.DidSizeChange || args.DidPositionChange)
+            {
+                WindowState.Save(AppWindow);
+            }
+        };
+
+        StartupSwitch.IsOn = StartupService.IsEnabled();
+        StartupService.Heal();
 
         AppWindow.Closing += OnAppWindowClosing;
         Activated += OnWindowActivated;
@@ -68,8 +94,7 @@ public sealed partial class MainWindow : Window
     // ---------------------------------------------------------------------
     // Tray icon (H.NotifyIcon.WinUI). The Win32 popup menu calls commands,
     // not Click handlers, so every item gets an ICommand. The icon is the
-    // Fluent-style shield with a tick; a small green badge dot appears
-    // bottom-right while the proxy is ON.
+    // Fluent shield; tinted green while the proxy is ON.
     // ---------------------------------------------------------------------
     private void CreateTrayIcon()
     {
@@ -119,18 +144,18 @@ public sealed partial class MainWindow : Window
         RootGrid.Children.Add(_tray);
     }
 
-    // Shield with a tick, drawn synchronously - this is the only tray
+    // Plain Fluent shield glyph, drawn synchronously - this is the only tray
     // rendering path that does not crash the native icon pipeline. A file
     // based BitmapImage made the app die on launch (0xC000027B in
-    // CoreMessagingXP.dll), so the glyph pair is used and the ON state is
-    // shown as the same glyphs tinted green.
+    // CoreMessagingXP.dll), so the single glyph is used and the ON state is
+    // shown as the same glyph tinted green.
     private static GeneratedIconSource TrayIcon(bool proxyOn)
     {
         return new GeneratedIconSource
         {
-            Text = "\uEA18\uE73E", // Shield + CheckMark
+            Text = "\uEA18", // Shield
             FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 36,
+            FontSize = 46,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
             Foreground = new SolidColorBrush(proxyOn
                 ? Color.FromArgb(255, 108, 203, 95)
@@ -165,7 +190,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void ShowFromTray()
+    public void ShowFromTray()
     {
         AppWindow.Show();
         Activate();
@@ -237,7 +262,6 @@ public sealed partial class MainWindow : Window
         if (_refreshing) return;
 
         _refreshing = true;
-        _lastError = false;
         SetControlsEnabled(false);
 
         try
@@ -349,14 +373,25 @@ public sealed partial class MainWindow : Window
                 SetScheduleTile("OFF", WordGrey, "outside window - tap to pause");
             }
 
-            HintText.Text = hint;
-            HintText.Visibility = hint.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (hint.Length > 0)
+            {
+                HintText.Text = hint;
+                HintText.Visibility = Visibility.Visible;
+            }
+            else if (_lastActionError is not null)
+            {
+                HintText.Text = _lastActionError;
+                HintText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                HintText.Visibility = Visibility.Collapsed;
+            }
 
             _lastRefresh = DateTime.Now;
         }
         catch (Exception ex)
         {
-            _lastError = true;
             _canTurnOn = false;
             _isProxyOn = false;
             _isPaused = false;
@@ -368,27 +403,15 @@ public sealed partial class MainWindow : Window
             ValueServer.Text = ValuePort.Text = ValueSchedule.Text = ValueNow.Text =
                 ValuePaused.Text = ValueNext.Text = ValueLastRun.Text = "-";
 
-            HintText.Visibility = Visibility.Collapsed;
-            ShowResult($"Could not read status: {ex.Message}", InfoBarSeverity.Error);
+            // Hard errors surface as a thin red line instead of a banner.
+            HintText.Text = "Could not read status: " + ex.Message;
+            HintText.Visibility = Visibility.Visible;
         }
         finally
         {
             _refreshing = false;
             SetControlsEnabled(true);
         }
-    }
-
-    private void ShowResult(string text, InfoBarSeverity severity)
-    {
-        ResultBar.Title = severity switch
-        {
-            InfoBarSeverity.Error => "Error",
-            InfoBarSeverity.Success => "Done",
-            _ => "Info"
-        };
-        ResultBar.Message = text;
-        ResultBar.Severity = severity;
-        ResultBar.IsOpen = true;
     }
 
     // ---------------------------------------------------------------------
@@ -413,26 +436,23 @@ public sealed partial class MainWindow : Window
                     ? result.Error.Trim()
                     : "Done.";
 
-            InfoBarSeverity severity;
             if (result.ExitCode != 0)
             {
-                severity = InfoBarSeverity.Error;
-            }
-            else if (Regex.IsMatch(text, "not changed|already|Nothing to do", RegexOptions.IgnoreCase))
-            {
-                // The engine refused or had nothing to do; do not paint it green.
-                severity = InfoBarSeverity.Informational;
+                // Show the engine's refusal inline as a thin red line.
+                _lastActionError = text;
+                HintText.Text = text;
+                HintText.Visibility = Visibility.Visible;
             }
             else
             {
-                severity = InfoBarSeverity.Success;
+                _lastActionError = null;
             }
-
-            ShowResult(text, severity);
         }
         catch (Exception ex)
         {
-            ShowResult(ex.Message, InfoBarSeverity.Error);
+            _lastActionError = ex.Message;
+            HintText.Text = ex.Message;
+            HintText.Visibility = Visibility.Visible;
         }
         finally
         {
@@ -446,15 +466,18 @@ public sealed partial class MainWindow : Window
     private async void ProxyTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isProxyOn ? "Off" : "On");
     private async void ScheduleTile_Click(object sender, RoutedEventArgs e) => await DoActionAsync(_isPaused ? "Resume" : "Pause");
 
+    private void StartupSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        StartupService.SetEnabled(StartupSwitch.IsOn);
+    }
+
+    public void HideToTray() => AppWindow.Hide();
+
     private void HideToTrayButton_Click(object sender, RoutedEventArgs e) => AppWindow.Hide();
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         await UpdateStatusAsync();
-        if (!_lastError)
-        {
-            ShowResult("Status refreshed.", InfoBarSeverity.Informational);
-        }
     }
 
     // Dialog content scrolls when the window is too short instead of clipping.
@@ -497,7 +520,6 @@ public sealed partial class MainWindow : Window
             try
             {
                 SettingsService.Write(_engine.EngineDir, updated);
-                ShowResult("Settings saved to settings.psd1 (a .bak copy was kept). The task picks the change up on its next run.", InfoBarSeverity.Success);
             }
             catch (Exception ex)
             {
