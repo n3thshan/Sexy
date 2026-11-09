@@ -34,8 +34,8 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
 
         ExtendsContentIntoTitleBar = true;
-        Title = "Sexy";
-        AppWindow.Title = "Sexy";
+        Title = "Sexy Proxy";
+        AppWindow.Title = "Sexy Proxy";
         SystemBackdrop = new MicaBackdrop();
 
         if (AppTitleBar is not null)
@@ -283,54 +283,51 @@ public sealed partial class MainWindow : Window
             {
                 // Missing data must never look healthy.
                 portListening = false;
-                portText = "unknown (not reported)";
+                ValuePort.Text = "unknown";
                 ValuePort.Foreground = WordRed;
+                ValuePortSub.Text = "port unknown - not reported";
             }
             else
             {
                 portListening = !portText.TrimStart().StartsWith("NOT listening", StringComparison.OrdinalIgnoreCase);
+                ValuePort.Text = portListening ? "v2rayN listening" : "NOT listening";
                 ValuePort.Foreground = portListening ? WordGreen : WordRed;
+                ValuePortSub.Text = portText;
             }
-            ValuePort.Text = portText;
-
-            ValueSchedule.Text = settings is not null
-                ? $"ON {settings.OnStart}-{settings.OnEnd}, {EngineService.FormatDays(settings.Days)}"
-                : Get("Schedule");
-
-            ValueNow.Text = Get("Schedule state now");
 
             var pausedText = Get("Paused", "no");
             _isPaused = pausedText.StartsWith("YES", StringComparison.OrdinalIgnoreCase);
-            if (_isPaused)
+
+            // Next change, shown in 12-hour format
+            var nextRaw = Get("Next scheduled change", "unknown").Trim();
+            if (DateTime.TryParseExact(
+                    nextRaw,
+                    "yyyy-MM-dd HH:mm",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out var parsedNext))
             {
-                var since = _engine.GetPausedSince();
-                pausedText = since.HasValue
-                    ? $"yes, since {since.Value:yyyy-MM-dd HH:mm} ({EngineService.FormatAgo(since.Value)})"
-                    : "yes";
-                ValuePaused.Foreground = WordRed;
+                ValueNext.Text = parsedNext.ToString("h:mm tt");
+                var span = parsedNext - DateTime.Now;
+                if (span.TotalSeconds <= 0)
+                {
+                    ValueNextSub.Text = "next change (due now)";
+                }
+                else if (span.TotalDays < 1)
+                {
+                    ValueNextSub.Text = $"next change (in {(int)span.TotalHours}h {span.Minutes}m)";
+                }
+                else
+                {
+                    ValueNextSub.Text = $"next change (in {(int)span.TotalDays}d {span.Hours}h)";
+                }
             }
             else
             {
-                pausedText = "no";
-                ValuePaused.Foreground = null;
+                ValueNext.Text = "-";
+                ValueNextSub.Text = "next change: " + nextRaw;
             }
-            ValuePaused.Text = pausedText;
-
-            var nextRaw = Get("Next scheduled change", "unknown");
-            ValueNext.Text = EngineService.FormatNext(nextRaw);
             ToolTipService.SetToolTip(ValueNext, nextRaw);
-
-            try
-            {
-                ValueLastRun.Text = await _engine.GetScheduledTaskSummaryAsync();
-            }
-            catch
-            {
-                // A failed task query must not blank the rest of the card.
-                ValueLastRun.Text = "task info unavailable";
-            }
-
-            ToolTipService.SetToolTip(ValueLastRun, ValueLastRun.Text);
 
             // ---------- Proxy tile ----------
             _canTurnOn = true;
@@ -365,17 +362,21 @@ public sealed partial class MainWindow : Window
             // ---------- Schedule tile ----------
             var nowRaw = Get("Schedule state now", string.Empty);
             bool insideWindow = nowRaw.StartsWith("On", StringComparison.OrdinalIgnoreCase);
+            // Schedule window in 12-hour format, e.g. "ON 7:00 AM-12:00 AM, every day"
+            var schedHint = settings is not null
+                ? $"ON {EngineService.To12Hour(settings.OnStart)}-{EngineService.To12Hour(settings.OnEnd)}, {EngineService.FormatDays(settings.Days)}"
+                : Get("Schedule");
             if (_isPaused)
             {
                 SetScheduleTile("PAUSED", WordAmber, "tap to resume");
             }
             else if (insideWindow)
             {
-                SetScheduleTile("ON", WordGreen, "tap to pause");
+                SetScheduleTile("ON", WordGreen, schedHint + " - tap to pause");
             }
             else
             {
-                SetScheduleTile("OFF", WordGrey, "outside window - tap to pause");
+                SetScheduleTile("OFF", WordGrey, schedHint + " (outside window)");
             }
 
             if (hint.Length > 0)
@@ -405,8 +406,8 @@ public sealed partial class MainWindow : Window
             SetProxyTile(false, "OFF", WordGrey, "status unavailable");
             SetScheduleTile("?", WordGrey, "status unavailable");
 
-            ValueServer.Text = ValuePort.Text = ValueSchedule.Text = ValueNow.Text =
-                ValuePaused.Text = ValueNext.Text = ValueLastRun.Text = "-";
+            ValueServer.Text = ValuePort.Text = ValuePortSub.Text = "-";
+            ValueNext.Text = ValueNextSub.Text = "-";
 
             // Hard errors surface as a thin red line instead of a banner.
             HintText.Text = "Could not read status: " + ex.Message;

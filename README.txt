@@ -99,28 +99,26 @@ The new window looks for the engine (Sexy.ps1) in this order:
 So on this PC it works out of the box, and the desktop task and log stay
 shared with the old setup.
 
-The window is a split layout. The left column has two tappable tiles:
-PROXY shows the proxy state (ON, OFF or OTHER) and SCHEDULE shows the
-schedule state (ON, OFF or PAUSED). The right column is the status card
-(server, v2rayN port, schedule, right now, paused, next change, last
-check) with Refresh, Edit..., Log... and Hide buttons underneath. Both
-columns are the same height, and the two tiles stretch to fill the
-column.
+The window is a split layout, titled "Sexy Proxy". The left column has two
+tappable tiles plus "Start with Windows": PROXY shows the proxy state
+(ON, OFF or OTHER) and SCHEDULE shows the schedule state (ON, OFF or
+PAUSED). The right column shows just three lines - the server, the v2rayN
+port and the next change (in 12-hour format) - with Refresh, Edit...,
+Log... and Hide buttons pinned to the bottom. Both columns are the same
+height.
 
 Tapping a tile toggles that thing. When another proxy is set up, or
 v2rayN is not listening, the proxy tile is blocked and ignores taps.
 The reason shows on the thin red line under the tiles.
 
-There is no result banner anymore. Hard errors show as a thin red line
-in the window.
+"Start with Windows" is a switch at the bottom of the left column. When
+it is on, Sexy launches hidden to the tray at logon (the HKCU Run key,
+value "Sexy", command "<exe>" --tray). The close (X) button still hides
+to tray; Exit on the tray menu quits.
 
+Hard errors show as a thin red line in the window; there is no banner.
 The window remembers its size and position between launches (stored in
-%LOCALAPPDATA%\Sexy\window.json). The default size is 740x520.
-
-There is a "Start with Windows (to tray)" switch in a footer row of the
-main window. When it is on, Sexy launches hidden to the tray at logon
-(the HKCU Run key, value "Sexy", command "<exe>" --tray). The close (X)
-button still hides to tray; Exit on the tray menu quits.
+%LOCALAPPDATA%\Sexy\window.json).
 
 The tray icon is a white Fluent shield glyph (\uEA18) drawn with
 GeneratedIconSource. The glyph is tinted green when the proxy is ON.

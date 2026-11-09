@@ -216,13 +216,13 @@ WinForms window — it must remain a *reader*: only the engine changes the proxy
 | --- | --- |
 | `Sexy.WinUI.csproj` | Unpackaged, self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`), `net8.0-windows10.0.19041.0`, win-x64. Package refs: `Microsoft.WindowsAppSDK` 2.6.5, `H.NotifyIcon.WinUI` 2.3.2 (2.4.1+ dropped .NET 8 and only ships a net10.0 build — do not upgrade without retargeting to net10). |
 | `App.xaml` / `App.xaml.cs` | Single-instance mutex (`Local\SexyWinUI`); a second launch signals the running instance (`Local\SexyShowWindow`) to show its window; `--tray` starts hidden to the tray; DPI PerMonitorV2 P/Invoke in the constructor. |
-| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar, split-panel tiles + status card, actions, tray icon. |
+| `MainWindow.xaml` / `.cs` | The window: Mica backdrop, custom title bar ("Sexy Proxy"), left column = two tappable tiles + Start with Windows toggle, right column = three-line status card, tray icon. |
 | `EditScheduleDialog.xaml` / `.cs` | In-app editor for `settings.psd1`. |
 | `EngineService.cs` | Spawns `Sexy.ps1 -Action <x>`, parses `Key: value` Status lines, reads the log tail, Task Scheduler state via `TaskInfo.ps1`. Finds the engine via: `SEXY_ENGINE_DIR` env var → exe folder → up to 5 parent folders → `C:\Users\Admin\Documents\Projects\v2rayN-proxy-schedule`. |
 | `SettingsService.cs` | Regex read/write of `settings.psd1` (writer keeps comments, backs up to `settings.psd1.bak` first). |
 | `TaskInfo.ps1` | Read-only Task Scheduler query (`LastRunTime/LastTaskResult/NumberOfMissedRuns/NextRunTime`); shipped next to the exe. |
 | `RelayCommand.cs` | Minimal `ICommand` for the tray popup menu (the Win32 popup menu calls commands, not Click handlers). |
-| `StartupService.cs` | "Start with Windows (to tray)" footer switch: reads/writes the per-user HKCU Run value `Sexy` = `"<exe path>" --tray`; `Heal()` rewrites the entry to the current exe path on launch when enabled; `IsEnabled()` only returns true for entries pointing at `Sexy.WinUI.exe`. |
+| `StartupService.cs` | "Start with Windows" toggle (bottom of the left column): reads/writes the per-user HKCU Run value `Sexy` = `"<exe path>" --tray`; `Heal()` rewrites the entry to the current exe path on launch when enabled; `IsEnabled()` only returns true for entries pointing at `Sexy.WinUI.exe`. |
 | `WindowState.cs` | Persists window position/size to `%LOCALAPPDATA%\Sexy\window.json`; load clamps the position to the work area and ignores sizes below 480x360; never throws. |
 
 Behavior notes:
@@ -234,14 +234,16 @@ Behavior notes:
 - **Close (X) hides to the tray**; "Exit" in the tray menu is a real exit.
   Left-click on the tray toggles the window. The window is resizable and
   maximizable; content scrolls.
-- **Layout:** split panel — left column = two tappable tiles in a Grid with
-  `*` rows (tiles stretch to equal height), right column = status card
-  (Server / v2rayN / Schedule / Right now / Paused / Next / Last check)
-  + 2x2 button grid (Refresh / Edit / Log / Hide); same height guaranteed by
-  the grid. Tiles are PROXY / SCHEDULE: icon + big state word + tap hint;
-  proxy tile icon is a plain Fluent shield glyph (`FontIcon` ea18) — no
-  tick overlay. Tile tap calls the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`).
-  Blocked proxy tile = `OTHER`/`OFF` with reason; taps ignored.
+- **Layout:** split panel - left column = two tappable tiles in a Grid with
+  `*` rows (tiles stretch to equal height) plus a `Start with Windows` row
+  with a ToggleSwitch; right column = three-line status card (Server /
+  v2rayN port / Next change, next change in 12-hour format) + a 2x2 button
+  grid (Refresh / Edit / Log / Hide) pinned to the bottom; same height
+  guaranteed by the grid. Tiles are PROXY / SCHEDULE: plain Fluent shield
+  glyph (`FontIcon` ea18) / clock glyph (e917), big state word, tap hint.
+  Tile tap calls the tray-menu engine actions (`On`/`Off`/`Resume`/`Pause`).
+  Blocked proxy tile = `OTHER`/`OFF` with reason; taps ignored. The
+  "Start with Windows" toggle replaces the old footer row.
 - **Tray icon:** `GeneratedIconSource`, text `\uEA18` (Shield) in Segoe Fluent
   Icons. Near-white = off; the same glyph tinted green = ON (green tint since
   there is no proven badge/dot path). File-based `BitmapImage`/PNG tray icons
@@ -255,7 +257,7 @@ Behavior notes:
   (saved on resize/move via the `AppWindow.Changed` event; on load the
   position is clamped to the work area and sizes below 480x360 are ignored —
   see `WindowState.cs`).
-- **"Start with Windows (to tray)" footer toggle** writes
+- **"Start with Windows" toggle** (bottom of the left column) writes
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Sexy` =
   `"<exe path>" --tray` via `StartupService.cs`; `--tray` launch starts the
   app with the window hidden. `Heal()` rewrites the entry to the current exe

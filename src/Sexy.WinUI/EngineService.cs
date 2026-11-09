@@ -261,6 +261,24 @@ public sealed class EngineService
 
     // --- formatting helpers (ported from the old window) ---
 
+    /// <summary>"07:00" or "24:00" -&gt; "7:00 AM" or "12:00 AM".</summary>
+    public static string To12Hour(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+        if (DateTime.TryParseExact(
+                text.Trim(),
+                "HH:mm",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out var parsed))
+        {
+            return parsed.ToString("h:mm tt");
+        }
+
+        return text.Trim();
+    }
+
     public static string FormatAgo(DateTime when)
     {
         var span = DateTime.Now - when;
