@@ -1,13 +1,13 @@
 using System.Text.RegularExpressions;
-using System.IO;
 using Windows.UI;
+using Windows.Foundation;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 
 namespace Sexy;
@@ -115,18 +115,46 @@ public sealed partial class MainWindow : Window
             ToolTipText = "Sexy - v2rayN schedule",
             NoLeftClickDelay = true
         };
-        _tray.IconSource = TrayBitmap(proxyOn: false);
+        _tray.IconSource = TrayIcon(proxyOn: false);
         _tray.ContextFlyout = menu;
         _tray.LeftClickCommand = new RelayCommand(ToggleWindowFromTray);
 
         RootGrid.Children.Add(_tray);
     }
 
-    private static BitmapImage TrayBitmap(bool proxyOn)
+    // Plain white Fluent shield, or the same shield with a small green dot
+    // bottom-right when the proxy is ON. GeneratedIconSource draws
+    // synchronously, which the tray icon pipeline requires.
+    private static GeneratedIconSource TrayIcon(bool proxyOn)
     {
-        var name = proxyOn ? "tray-shield-on.png" : "tray-shield.png";
-        var path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
-        return new BitmapImage(new Uri(path, UriKind.Absolute));
+        var icon = new GeneratedIconSource
+        {
+            Text = "\uEA18", // Shield
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 44,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromArgb(255, 245, 245, 245))
+        };
+
+        if (proxyOn)
+        {
+            var badge = new RadialGradientBrush
+            {
+                Center = new Point(0.78, 0.76),
+                RadiusX = 0.21,
+                RadiusY = 0.21,
+                GradientStops =
+                {
+                    new GradientStop { Offset = 0.0, Color = Color.FromArgb(255, 16, 124, 16) },
+                    new GradientStop { Offset = 0.84, Color = Color.FromArgb(255, 16, 124, 16) },
+                    new GradientStop { Offset = 0.85, Color = Color.FromArgb(0, 16, 124, 16) },
+                    new GradientStop { Offset = 1.0, Color = Color.FromArgb(0, 16, 124, 16) }
+                }
+            };
+            icon.Background = badge;
+        }
+
+        return icon;
     }
 
     private void UpdateTrayIcon(string stateUpper)
@@ -134,7 +162,7 @@ public sealed partial class MainWindow : Window
         if (_tray is null) return;
 
         bool proxyOn = stateUpper.StartsWith("ON", StringComparison.Ordinal);
-        _tray.IconSource = TrayBitmap(proxyOn);
+        _tray.IconSource = TrayIcon(proxyOn);
         _tray.ToolTipText = stateUpper.StartsWith("ON", StringComparison.Ordinal)
             ? "Sexy - Proxy ON"
             : stateUpper.StartsWith("OTHER", StringComparison.Ordinal)

@@ -237,10 +237,11 @@ Behavior notes:
   The tile tap calls the same engine action as the tray menu
   (`On`/`Off`/`Resume`/`Pause`). Blocked proxy tile = `OTHER`/`OFF` with
   reason; taps ignored.
-- **Tray icon:** plain white Fluent shield PNG (`Assets/tray-shield.png`);
-  with proxy ON a green badge dot is composited
-  (`Assets/tray-shield-on.png`). Shown via `IconSource = BitmapImage`
-  (ImageSource), not GeneratedIconSource. Tooltip carries OFF/OTHER/ON.
+- **Tray icon:** `GeneratedIconSource` white Fluent shield glyph (ea18);
+  with proxy ON a RadialGradientBrush green dot bottom-right is composited
+  into the same icon (no file I/O — do NOT assign file-based BitmapImage to
+  IconSource: it loads lazily and the tray pipeline dies with 0xC000027B).
+  UpdateTrayIcon swaps the two icon sources on every status refresh.
 - **Tray actions run hidden** and report via balloon tip
   (`TaskbarIcon.ShowNotification`); they never unhide the window.
 - Tray icon is repainted on every status refresh.
